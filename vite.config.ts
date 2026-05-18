@@ -22,36 +22,41 @@ function serveMirror() {
     }
     return null;
   };
+  const handler = (req: any, res: any, next: any) => {
+    if (!req.url || req.method !== "GET") return next();
+    const file = tryFiles(decodeURIComponent(req.url.split("?")[0]));
+    if (!file) return next();
+    const ext = path.extname(file).toLowerCase();
+    const types: Record<string, string> = {
+      ".html": "text/html; charset=utf-8",
+      ".css": "text/css; charset=utf-8",
+      ".js": "application/javascript; charset=utf-8",
+      ".json": "application/json; charset=utf-8",
+      ".svg": "image/svg+xml",
+      ".png": "image/png",
+      ".jpg": "image/jpeg",
+      ".jpeg": "image/jpeg",
+      ".gif": "image/gif",
+      ".webp": "image/webp",
+      ".ico": "image/x-icon",
+      ".woff": "font/woff",
+      ".woff2": "font/woff2",
+      ".ttf": "font/ttf",
+      ".eot": "application/vnd.ms-fontobject",
+      ".pdf": "application/pdf",
+      ".xml": "application/xml; charset=utf-8",
+    };
+    res.setHeader("content-type", types[ext] ?? "application/octet-stream");
+    res.end(fs.readFileSync(file));
+  };
   return {
     name: "serve-wp-mirror",
+    enforce: "pre" as const,
     configureServer(server: any) {
-      server.middlewares.use((req: any, res: any, next: any) => {
-        if (!req.url || req.method !== "GET") return next();
-        const file = tryFiles(decodeURIComponent(req.url));
-        if (!file) return next();
-        const ext = path.extname(file).toLowerCase();
-        const types: Record<string, string> = {
-          ".html": "text/html; charset=utf-8",
-          ".css": "text/css; charset=utf-8",
-          ".js": "application/javascript; charset=utf-8",
-          ".json": "application/json; charset=utf-8",
-          ".svg": "image/svg+xml",
-          ".png": "image/png",
-          ".jpg": "image/jpeg",
-          ".jpeg": "image/jpeg",
-          ".gif": "image/gif",
-          ".webp": "image/webp",
-          ".ico": "image/x-icon",
-          ".woff": "font/woff",
-          ".woff2": "font/woff2",
-          ".ttf": "font/ttf",
-          ".eot": "application/vnd.ms-fontobject",
-          ".pdf": "application/pdf",
-          ".xml": "application/xml; charset=utf-8",
-        };
-        res.setHeader("content-type", types[ext] ?? "application/octet-stream");
-        res.end(fs.readFileSync(file));
-      });
+      // Register BEFORE TanStack's catch-all SSR handler
+      return () => {
+        server.middlewares.use(handler);
+      };
     },
   };
 }
