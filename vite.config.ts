@@ -8,13 +8,19 @@ import path from "node:path";
 // during dev. In production on Cloudflare, the Assets binding handles this automatically.
 function serveMirror() {
   const publicDir = path.resolve("public");
-  const tryFiles = (urlPath: string): string | null => {
-    const clean = urlPath.split("?")[0].split("#")[0];
+  const tryFiles = (urlPath: string, query: string): string | null => {
+    const clean = urlPath.split("#")[0];
+    const ext = path.extname(clean);
     const candidates = [
       path.join(publicDir, clean, "index.html"),
       path.join(publicDir, clean.replace(/\/$/, "") + ".html"),
       path.join(publicDir, clean),
     ];
+    if (query) {
+      // wget mirror saves "foo.css?ver=1" as "foo.css@ver=1.css" or "foo.js@ver=1"
+      candidates.push(path.join(publicDir, clean + "@" + query + ext));
+      candidates.push(path.join(publicDir, clean + "@" + query));
+    }
     for (const c of candidates) {
       try {
         if (fs.statSync(c).isFile()) return c;
@@ -23,8 +29,9 @@ function serveMirror() {
     return null;
   };
   const handler = (req: any, res: any, next: any) => {
-    if (!req.url || req.method !== "GET") return next();
-    const file = tryFiles(decodeURIComponent(req.url.split("?")[0]));
+    if (!req.url || (req.method !== "GET" && req.method !== "HEAD")) return next();
+    const [rawPath, query = ""] = req.url.split("?");
+    const file = tryFiles(decodeURIComponent(rawPath), query);
     if (!file) return next();
     const ext = path.extname(file).toLowerCase();
     const types: Record<string, string> = {
