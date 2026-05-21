@@ -46,6 +46,7 @@ function serveMirror() {
       ".pdf": "application/pdf",
       ".xml": "application/xml; charset=utf-8",
     };
+    res.statusCode = 200;
     res.setHeader("content-type", types[ext] ?? "application/octet-stream");
     res.end(fs.readFileSync(file));
   };
