@@ -72,6 +72,9 @@ function serveMirror() {
 }
 
 export default defineConfig({
+  // Cloudflare Workers plugin is off — we deploy to Plesk Node.js, not CF.
+  // See src/start-node.ts for the production HTTP launcher.
+  cloudflare: false,
   tanstackStart: {
     server: { entry: "server" },
   },
