@@ -1,0 +1,87 @@
+import { createFileRoute } from "@tanstack/react-router";
+
+import { LeadForm } from "@/components/blocks/LeadForm";
+
+export const Route = createFileRoute("/contact-us")({
+  component: ContactUsPage,
+  head: () => ({
+    meta: [
+      { title: "Contact Us | Interactive Displays Ireland" },
+      {
+        name: "description",
+        content:
+          "Get in touch with Interactive Displays Ireland — digital signage, interactive displays, kiosks and AV solutions for retail, hospitality, and corporate environments across Ireland.",
+      },
+      { property: "og:title", content: "Contact Interactive Displays Ireland" },
+      {
+        property: "og:description",
+        content: "Talk to the IDI team about digital signage, kiosks and interactive displays.",
+      },
+      { property: "og:type", content: "website" },
+    ],
+    links: [{ rel: "canonical", href: "https://beta.interactivedisplays.ie/contact-us" }],
+  }),
+});
+
+function ContactUsPage() {
+  return (
+    <main className="min-h-screen bg-background text-foreground">
+      <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
+        <header className="mb-10 max-w-2xl">
+          <p className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
+            Interactive Displays Ireland
+          </p>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Contact us</h1>
+          <p className="mt-4 text-base text-muted-foreground sm:text-lg">
+            Tell us about your project — digital signage, interactive displays, kiosks, or a
+            full-room AV install. A member of the team will respond within one business day.
+          </p>
+        </header>
+
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_320px]">
+          <section aria-labelledby="form-heading">
+            <h2 id="form-heading" className="sr-only">
+              Send us a message
+            </h2>
+            <LeadForm />
+          </section>
+
+          <aside className="space-y-6 rounded-xl border bg-card p-6 text-card-foreground">
+            <div>
+              <h2 className="text-lg font-semibold">Other ways to reach us</h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Prefer to talk to someone directly?
+              </p>
+            </div>
+            <dl className="space-y-4 text-sm">
+              <div>
+                <dt className="font-medium text-foreground">Email</dt>
+                <dd className="mt-1">
+                  <a
+                    className="text-primary underline-offset-4 hover:underline"
+                    href="mailto:sales@interactivedisplays.ie"
+                  >
+                    sales@interactivedisplays.ie
+                  </a>
+                </dd>
+              </div>
+              <div>
+                <dt className="font-medium text-foreground">Phone</dt>
+                <dd className="mt-1 text-muted-foreground">+353 (0)61 472 250</dd>
+              </div>
+              <div>
+                <dt className="font-medium text-foreground">Office</dt>
+                <dd className="mt-1 text-muted-foreground">
+                  Annacotty Business Park, Limerick, Ireland
+                </dd>
+              </div>
+            </dl>
+            <p className="text-xs text-muted-foreground">
+              Office hours: Monday–Friday, 09:00–17:30 IST.
+            </p>
+          </aside>
+        </div>
+      </div>
+    </main>
+  );
+}
