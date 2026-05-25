@@ -35,7 +35,7 @@
 | Package manager | **Bun** (`bun.lock`, `bunfig.toml`) | Lovable's choice; we keep it. All `npm install ...` in this doc is interchangeable with `bun add ...` |
 | Chat | **Odoo Live Chat (`im_livechat` widget)** | Replaces Tawk.to entirely; ties into Odoo CRM |
 | Forms | **Odoo `crm.lead` via custom REST endpoint**, **Resend as fallback** | Lead capture lands in Odoo CRM directly; Resend only if Odoo unreachable |
-| Build pipeline | Lovable (scaffold) → **Claude Code (build)** → GitHub → Plesk (CI or SSH deploy: `git pull` + `bun install` + `bun run build` + restart via Plesk Node.js panel or `pm2 reload`) | Lovable produced the scaffold; Claude Code is the engineer |
+| Build pipeline | Lovable (scaffold) → **Claude Code (build)** → GitHub → Plesk (SSH deploy: `./deploy.sh` — wraps `git pull` + `bun install` + `bun run build` + supervisor restart) | Lovable produced the scaffold; Claude Code is the engineer. See `docs/PLESK_DEPLOY.md` for the full architecture |
 
 **What we are NOT using:**
 - ❌ No Next.js — the original ADR proposed Next.js; we pivoted to TanStack Start on 2026-05-22 because Lovable shipped it and converting was judged not worth the effort
