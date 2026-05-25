@@ -4,10 +4,12 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import fs from "node:fs";
 import path from "node:path";
 
-// Serve the WordPress static mirror in /public for clean URLs (e.g. "/", "/contact-us/")
-// during dev. In production on Cloudflare, the Assets binding handles this automatically.
+// Serve the WordPress static mirror from /wp-mirror for clean URLs (e.g. "/", "/contact-us/")
+// during dev — this lets us preview the legacy site for reference while building the rebuild
+// on top. The mirror is intentionally OUTSIDE /public so it does not ship to production:
+// the real /public is for TanStack Start's deployed assets only.
 function serveMirror() {
-  const publicDir = path.resolve("public");
+  const publicDir = path.resolve("wp-mirror");
   const tryFiles = (urlPath: string, query: string): string | null => {
     const clean = urlPath.split("#")[0];
     const ext = path.extname(clean);
@@ -70,6 +72,9 @@ function serveMirror() {
 }
 
 export default defineConfig({
+  // Cloudflare Workers plugin is off — we deploy to Plesk Node.js, not CF.
+  // See src/start-node.ts for the production HTTP launcher.
+  cloudflare: false,
   tanstackStart: {
     server: { entry: "server" },
   },
