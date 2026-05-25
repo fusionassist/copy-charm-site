@@ -1,12 +1,12 @@
 // Production HTTP launcher for Plesk Node.js deployment.
 //
 // Layers (request flows top → bottom; first match wins):
-//   1. /api/email-test            → sends a smoke-test email via M365 SMTP
-//   2. /api/contact (planned)     → contact form handler, also via M365 SMTP
-//   3. wp-mirror static serving    → legacy WordPress wget snapshot at wp-mirror/
-//   4. TanStack Start SSR          → built dist/server/server.js fetch handler
+//   1. /api/email-test            → sends a smoke-test email via M365 Graph API
+//   2. /api/contact (planned)     → contact form handler, also via M365 Graph
+//   3. wp-mirror static serving   → legacy WordPress wget snapshot at wp-mirror/
+//   4. TanStack Start SSR         → built dist/server/server.js fetch handler
 //
-// PORT, HOST, and all SMTP_* env vars are loaded from .env.local via
+// PORT, HOST, and all M365_* env vars are loaded from .env.local via
 // Node's --env-file-if-exists flag (set in ~/bin/beta-node-supervisor.sh).
 // The supervisor restarts this process automatically every minute if it
 // dies.
@@ -14,15 +14,12 @@
 import { serve } from "srvx/node";
 import { stat, readFile } from "node:fs/promises";
 import { extname, join, resolve } from "node:path";
-import nodemailer from "nodemailer";
 import handler from "./dist/server/server.js";
 
 const MIRROR_DIR = resolve(process.cwd(), "wp-mirror");
 const PORT = process.env.PORT ?? 3000;
 const HOST = process.env.HOST ?? undefined;
 
-// URL paths that should bypass the mirror and go straight to TanStack Start.
-// Add a path here when a real TanStack route takes over from a mirror URL.
 const MIRROR_EXCLUDE = new Set([
   "/api/",
   // "/contact-us/",
@@ -107,35 +104,77 @@ async function tryServeMirror(request) {
   });
 }
 
-// ─── M365 SMTP ───────────────────────────────────────────────────────────────
+// ─── M365 Graph API (OAuth2 client credentials → /sendMail) ─────────────────
 
-let _transporter;
-function getTransporter() {
-  if (_transporter) return _transporter;
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-  if (!user || !pass) {
-    throw new Error("SMTP_USER and SMTP_PASS must be set in .env.local");
+let _cachedToken; // { token, expiresAt }
+
+function requireEnv(...names) {
+  const missing = names.filter((n) => !process.env[n]);
+  if (missing.length) {
+    throw new Error(`Missing env var(s) in .env.local: ${missing.join(", ")}`);
   }
-  _transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST ?? "smtp.office365.com",
-    port: Number(process.env.SMTP_PORT ?? 587),
-    secure: false, // STARTTLS on 587
-    auth: { user, pass },
-  });
-  return _transporter;
 }
 
-async function sendMail({ subject, text, html }) {
-  const from = process.env.SMTP_FROM ?? process.env.SMTP_USER;
-  const to = process.env.LEAD_RECIPIENT ?? from;
-  const info = await getTransporter().sendMail({ from, to, subject, text, html });
-  return {
-    messageId: info.messageId,
-    accepted: info.accepted,
-    rejected: info.rejected,
-    response: info.response,
+async function getGraphToken() {
+  // Reuse token if it has more than 60s left
+  if (_cachedToken && _cachedToken.expiresAt > Date.now() + 60_000) {
+    return _cachedToken.token;
+  }
+  requireEnv("M365_TENANT_ID", "M365_CLIENT_ID", "M365_CLIENT_SECRET");
+  const tenant = process.env.M365_TENANT_ID;
+  const url = `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`;
+  const body = new URLSearchParams({
+    client_id: process.env.M365_CLIENT_ID,
+    client_secret: process.env.M365_CLIENT_SECRET,
+    scope: "https://graph.microsoft.com/.default",
+    grant_type: "client_credentials",
+  });
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded" },
+    body,
+  });
+  if (!res.ok) {
+    throw new Error(`OAuth token request failed: ${res.status} ${await res.text()}`);
+  }
+  const data = await res.json();
+  _cachedToken = {
+    token: data.access_token,
+    expiresAt: Date.now() + (data.expires_in ?? 3600) * 1000,
   };
+  return _cachedToken.token;
+}
+
+async function sendMail({ subject, text, html, to }) {
+  requireEnv("M365_SENDER");
+  const sender = process.env.M365_SENDER;
+  const recipient = to ?? process.env.LEAD_RECIPIENT ?? sender;
+  const token = await getGraphToken();
+  const payload = {
+    message: {
+      subject,
+      body: {
+        contentType: html ? "HTML" : "Text",
+        content: html ?? text ?? "",
+      },
+      toRecipients: [{ emailAddress: { address: recipient } }],
+    },
+    saveToSentItems: true,
+  };
+  const url = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(sender)}/sendMail`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${token}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  // Graph returns 202 Accepted with empty body on success
+  if (!res.ok) {
+    throw new Error(`Graph sendMail failed: ${res.status} ${await res.text()}`);
+  }
+  return { ok: true, status: res.status, sender, recipient };
 }
 
 async function handleEmailTest(request) {
@@ -147,8 +186,8 @@ async function handleEmailTest(request) {
   }
   try {
     const result = await sendMail({
-      subject: "beta.interactivedisplays.ie SMTP test",
-      text: `This is a test message from the beta deployment confirming the M365 SMTP path works.\n\nTimestamp: ${new Date().toISOString()}\nFrom env SMTP_FROM: ${process.env.SMTP_FROM ?? "(unset)"}\nTo env LEAD_RECIPIENT: ${process.env.LEAD_RECIPIENT ?? "(unset)"}`,
+      subject: "beta.interactivedisplays.ie Graph API test",
+      text: `Smoke test from the beta deployment confirming the M365 Graph API path works.\n\nTimestamp: ${new Date().toISOString()}\nSender: ${process.env.M365_SENDER}\nRecipient: ${process.env.LEAD_RECIPIENT ?? "(falls back to sender)"}`,
     });
     return new Response(JSON.stringify({ ok: true, ...result }, null, 2), {
       status: 200,
@@ -191,6 +230,7 @@ const addr = server.node?.address?.();
 const url = addr && typeof addr === "object"
   ? `http://${addr.address === "::" || addr.address === "0.0.0.0" ? "localhost" : addr.address}:${addr.port}`
   : `http://localhost:${PORT}`;
+const m365Ready = !!(process.env.M365_TENANT_ID && process.env.M365_CLIENT_ID && process.env.M365_CLIENT_SECRET);
 console.log(`interactivedisplays.ie — listening on ${url}`);
 console.log(`  wp-mirror fallback: ${MIRROR_DIR}`);
-console.log(`  /api/email-test: ${process.env.SMTP_USER ? "ready" : "NOT CONFIGURED (set SMTP_USER/SMTP_PASS)"}`);
+console.log(`  /api/email-test: ${m365Ready ? "ready (Graph API)" : "NOT CONFIGURED (set M365_TENANT_ID/CLIENT_ID/CLIENT_SECRET)"}`);
