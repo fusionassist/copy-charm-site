@@ -28,7 +28,7 @@ function ContactUsPage() {
     <main className="min-h-screen bg-background text-foreground">
       <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
         <header className="mb-10 max-w-2xl">
-          <p className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
+          <p className="text-sm font-semibold uppercase tracking-wider text-brand-cyan">
             Interactive Displays Ireland
           </p>
           <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Contact us</h1>

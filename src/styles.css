@@ -2,6 +2,9 @@
 @source "../src";
 @import "tw-animate-css";
 
+/* Inter — primary brand typeface */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+
 @custom-variant dark (&:is(.dark *));
 
 /*
@@ -19,6 +22,11 @@
  */
 
 @theme inline {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --color-brand-navy: var(--brand-navy);
+  --color-brand-blue: var(--brand-blue);
+  --color-brand-cyan: var(--brand-cyan);
+  --color-brand-spark: var(--brand-spark);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -63,13 +71,21 @@
 
 :root {
   --radius: 0.625rem;
+
+  /* IDI brand tokens — extracted from the IDI logo */
+  --brand-navy:  oklch(0.286 0.140 264);  /* #002B7A primary */
+  --brand-blue:  oklch(0.355 0.157 263);  /* #003E9E secondary */
+  --brand-cyan:  oklch(0.685 0.123 230);  /* #1B9CD3 accent */
+  --brand-spark: oklch(0.820 0.106 220);  /* #2CD1ED bright accent / hover */
+
   --background: oklch(1 0 0);
   --foreground: oklch(0.129 0.042 264.695);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.129 0.042 264.695);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
+  /* Semantic primary mapped to IDI navy — every default <Button> picks it up */
+  --primary: var(--brand-navy);
   --primary-foreground: oklch(0.984 0.003 247.858);
   --secondary: oklch(0.968 0.007 247.896);
   --secondary-foreground: oklch(0.208 0.042 265.755);
@@ -81,7 +97,8 @@
   --destructive-foreground: oklch(0.984 0.003 247.858);
   --border: oklch(0.929 0.013 255.508);
   --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
+  /* Focus ring uses IDI cyan so it stands out and is on-brand */
+  --ring: var(--brand-cyan);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
