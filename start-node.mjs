@@ -18,6 +18,7 @@ import { z } from "zod";
 import handler from "./dist/server/server.js";
 
 const MIRROR_DIR = resolve(process.cwd(), "wp-mirror");
+const CLIENT_DIR = resolve(process.cwd(), "dist", "client");
 const PORT = process.env.PORT ?? 3000;
 const HOST = process.env.HOST ?? undefined;
 
@@ -86,6 +87,29 @@ async function resolveMirrorFile(rawPath, rawQuery) {
     if (await isFile(c)) return c;
   }
   return null;
+}
+
+async function tryServeClientAsset(request) {
+  if (request.method !== "GET" && request.method !== "HEAD") return null;
+  const url = new URL(request.url);
+  if (!url.pathname.startsWith("/assets/")) return null;
+  // Defense in depth: resolve the path and ensure it stays inside CLIENT_DIR
+  const stripped = url.pathname.replace(/^\/+/, "");
+  const file = resolve(CLIENT_DIR, stripped);
+  if (!file.startsWith(CLIENT_DIR + "/") && file !== CLIENT_DIR) return null;
+  if (!(await isFile(file))) return null;
+  const ext = extname(file).toLowerCase();
+  const contentType = CONTENT_TYPES[ext] ?? "application/octet-stream";
+  const body = request.method === "HEAD" ? null : await readFile(file);
+  return new Response(body, {
+    status: 200,
+    headers: {
+      "content-type": contentType,
+      // Vite content-hashes these filenames so they're safe to cache forever
+      "cache-control": "public, max-age=31536000, immutable",
+      "x-served-by": "dist-client",
+    },
+  });
 }
 
 async function tryServeMirror(request) {
@@ -326,11 +350,15 @@ const server = serve({
     if (url.pathname === "/api/contact") return handleContact(request);
     if (url.pathname === "/api/email-test") return handleEmailTest(request);
 
-    // 2. wp-mirror static serving
+    // 2. Vite-built client assets (CSS/JS bundles for our TanStack routes)
+    const assetResponse = await tryServeClientAsset(request);
+    if (assetResponse) return assetResponse;
+
+    // 3. wp-mirror static serving
     const mirrorResponse = await tryServeMirror(request);
     if (mirrorResponse) return mirrorResponse;
 
-    // 3. TanStack Start SSR
+    // 4. TanStack Start SSR
     return handler.fetch(request);
   },
   port: PORT,
