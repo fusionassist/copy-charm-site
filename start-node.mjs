@@ -32,9 +32,9 @@ const MIRROR_EXCLUDE = new Set([
   "/contact-us",
   "/contact-us/",
 ]);
-// Exact-only matches (mostly the homepage — we don't want a generic "/"
-// prefix to swallow every URL).
-const MIRROR_EXCLUDE_EXACT = new Set(["/"]);
+// Exact-only matches (the homepage gets added back here when the React
+// homepage redesign is ready — for now it serves from the wp-mirror).
+const MIRROR_EXCLUDE_EXACT = new Set();
 
 function isMirrorExcluded(pathname) {
   if (MIRROR_EXCLUDE_EXACT.has(pathname)) return true;
