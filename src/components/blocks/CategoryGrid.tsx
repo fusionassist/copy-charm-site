@@ -10,37 +10,37 @@ const CATEGORIES: Category[] = [
     slug: "interactive",
     name: "Interactive Displays",
     description: "Touch-enabled screens for retail, education and collaboration.",
-    image: "/wp-content/uploads/2025/05/pcap-wall-mounted-touch-screen-dual-os-windows-android-giant-tablet-09.jpg",
+    image: "/images/screens/category-interactive.jpg",
   },
   {
     slug: "outdoor",
     name: "Outdoor Displays",
     description: "High-brightness, weather-rated screens for shopfronts and forecourts.",
-    image: "/wp-content/uploads/2025/05/outdoor-screen-.jpg",
+    image: "/images/screens/category-outdoor.jpg",
   },
   {
     slug: "indoor",
     name: "Indoor Displays",
     description: "Commercial-grade signage for reception, retail and corporate.",
-    image: "/wp-content/uploads/2025/05/Large-format-screen-3.jpg",
+    image: "/images/screens/category-indoor.jpg",
   },
   {
     slug: "touchscreen",
     name: "Touchscreens & Kiosks",
     description: "Self-ordering, wayfinding and information kiosks.",
-    image: "/wp-content/uploads/2025/05/gallery-self-ordering-touchscreen-kiosk-1.jpg",
+    image: "/images/screens/category-touchscreen.jpg",
   },
   {
     slug: "led",
     name: "LED Video Walls",
     description: "Seamless indoor and outdoor LED walls in any configuration.",
-    image: "/wp-content/uploads/2025/05/product-elevator-screens.jpg",
+    image: "/images/screens/category-led.jpg",
   },
   {
     slug: "self-ordering",
     name: "Self-Ordering",
     description: "QSR and hospitality kiosks that increase order value.",
-    image: "/wp-content/uploads/2025/05/gallery-drive-thru-screen-1.jpg",
+    image: "/images/screens/category-self-ordering.jpg",
   },
 ];
 

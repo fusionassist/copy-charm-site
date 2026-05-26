@@ -48,8 +48,8 @@ export function Hero() {
         <div className="relative flex items-center justify-center lg:justify-end">
           <div className="relative aspect-[4/3] w-full max-w-xl overflow-hidden rounded-2xl border border-white/10 bg-brand-blue/40 shadow-2xl shadow-brand-cyan/10">
             <img
-              src="/wp-content/uploads/2025/05/Large-format-screen-3.jpg"
-              alt="Large-format digital display in a commercial environment"
+              src="/images/screens/hero-magic-mirror.jpg"
+              alt="Wall-mounted interactive PCAP touch display"
               loading="eager"
               decoding="async"
               className="size-full object-cover"

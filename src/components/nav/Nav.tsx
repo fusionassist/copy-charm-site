@@ -21,11 +21,16 @@ export function Nav() {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
         <a
           href="/"
-          className="flex items-center gap-2 text-base font-bold uppercase tracking-tight text-brand-navy sm:text-lg"
+          className="flex items-center gap-2"
           aria-label="Interactive Displays Ireland — home"
         >
-          <span aria-hidden="true" className="inline-block size-2.5 rounded-full bg-brand-cyan" />
-          Interactive<span className="text-foreground">Displays</span>
+          <img
+            src="/brand/idi-logo-color.png"
+            alt="Interactive Displays Ireland"
+            width={180}
+            height={48}
+            className="h-9 w-auto sm:h-10"
+          />
         </a>
 
         <nav aria-label="Primary" className="hidden md:block">

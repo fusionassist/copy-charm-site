@@ -24,11 +24,16 @@ export function Footer() {
           <div>
             <a
               href="/"
-              className="flex items-center gap-2 text-lg font-bold uppercase tracking-tight"
+              className="inline-flex items-center"
               aria-label="Interactive Displays Ireland — home"
             >
-              <span aria-hidden="true" className="inline-block size-2.5 rounded-full bg-brand-cyan" />
-              InteractiveDisplays
+              <img
+                src="/brand/idi-logo-white.png"
+                alt="Interactive Displays Ireland"
+                width={200}
+                height={52}
+                className="h-10 w-auto"
+              />
             </a>
             <p className="mt-4 text-sm text-white/80">
               Digital signage, interactive displays, kiosks and AV solutions for retail, hospitality,

@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { Hero } from "@/components/blocks/Hero";
+import { StatsBar } from "@/components/blocks/StatsBar";
 import { CategoryGrid } from "@/components/blocks/CategoryGrid";
+import { WhyChooseUs } from "@/components/blocks/WhyChooseUs";
 import { LogoStrip } from "@/components/blocks/LogoStrip";
 import { CTABanner } from "@/components/blocks/CTABanner";
 
@@ -31,8 +33,10 @@ function HomePage() {
   return (
     <>
       <Hero />
+      <StatsBar />
       <CategoryGrid />
       <LogoStrip />
+      <WhyChooseUs />
       <CTABanner />
     </>
   );

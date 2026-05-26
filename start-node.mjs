@@ -96,24 +96,32 @@ async function resolveMirrorFile(rawPath, rawQuery) {
   return null;
 }
 
+// Serves any file from dist/client/ — Vite puts both its hashed bundles
+// (/assets/*) and anything copied from public/ (e.g. /brand/, /images/)
+// there during build. Hashed asset names are immutable; everything else
+// gets a shorter cache window so brand assets can be swapped without a
+// rebuild-only deploy.
 async function tryServeClientAsset(request) {
   if (request.method !== "GET" && request.method !== "HEAD") return null;
   const url = new URL(request.url);
-  if (!url.pathname.startsWith("/assets/")) return null;
+  if (url.pathname === "/" || url.pathname === "") return null;
   // Defense in depth: resolve the path and ensure it stays inside CLIENT_DIR
   const stripped = url.pathname.replace(/^\/+/, "");
+  if (!stripped) return null;
   const file = resolve(CLIENT_DIR, stripped);
   if (!file.startsWith(CLIENT_DIR + "/") && file !== CLIENT_DIR) return null;
   if (!(await isFile(file))) return null;
   const ext = extname(file).toLowerCase();
   const contentType = CONTENT_TYPES[ext] ?? "application/octet-stream";
   const body = request.method === "HEAD" ? null : await readFile(file);
+  const isHashed = url.pathname.startsWith("/assets/");
   return new Response(body, {
     status: 200,
     headers: {
       "content-type": contentType,
-      // Vite content-hashes these filenames so they're safe to cache forever
-      "cache-control": "public, max-age=31536000, immutable",
+      "cache-control": isHashed
+        ? "public, max-age=31536000, immutable"
+        : "public, max-age=3600",
       "x-served-by": "dist-client",
     },
   });
