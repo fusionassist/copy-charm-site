@@ -24,13 +24,20 @@ const HOST = process.env.HOST ?? undefined;
 
 // URL paths that should bypass the mirror and go straight to TanStack Start
 // (or our inline API handlers above the mirror layer).
+// Paths handled by TanStack Start (or our inline API handlers) instead of
+// the wp-mirror. Add new entries here as routes are migrated. Exact match
+// or prefix-match for entries ending in "/".
 const MIRROR_EXCLUDE = new Set([
   "/api/",
   "/contact-us",
   "/contact-us/",
 ]);
+// Exact-only matches (mostly the homepage — we don't want a generic "/"
+// prefix to swallow every URL).
+const MIRROR_EXCLUDE_EXACT = new Set(["/"]);
 
 function isMirrorExcluded(pathname) {
+  if (MIRROR_EXCLUDE_EXACT.has(pathname)) return true;
   if (MIRROR_EXCLUDE.has(pathname)) return true;
   for (const entry of MIRROR_EXCLUDE) {
     if (entry.endsWith("/") && pathname.startsWith(entry)) return true;
