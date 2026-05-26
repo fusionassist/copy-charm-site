@@ -15,8 +15,26 @@ import { serve } from "srvx/node";
 import { stat, readFile, readdir } from "node:fs/promises";
 import { extname, join, resolve } from "node:path";
 import { z } from "zod";
-import matter from "gray-matter";
+import yaml from "js-yaml";
 import handler from "./dist/server/server.js";
+
+// Manual frontmatter parser — gray-matter ships with the v3 js-yaml API
+// (safeLoad etc.) which was removed in js-yaml@4. We force js-yaml@4 via
+// package.json overrides to fix an unrelated xmlbuilder2 issue, so we
+// bypass gray-matter here and use js-yaml directly.
+function parseFrontmatter(raw) {
+  const match = raw.match(/^---\r?\n([\s\S]+?)\r?\n---\r?\n?([\s\S]*)$/);
+  if (!match) return { data: {}, content: raw };
+  let data = {};
+  try {
+    data = yaml.load(match[1]) ?? {};
+    if (typeof data !== "object" || Array.isArray(data)) data = {};
+  } catch (err) {
+    console.error("[content] frontmatter YAML parse failed:", err);
+    data = {};
+  }
+  return { data, content: match[2] };
+}
 
 const MIRROR_DIR = resolve(process.cwd(), "wp-mirror");
 const CLIENT_DIR = resolve(process.cwd(), "dist", "client");
@@ -329,7 +347,7 @@ async function loadContent(type) {
     const fullPath = join(dir, filename);
     try {
       const raw = await readFile(fullPath, "utf8");
-      const { data, content } = matter(raw);
+      const { data, content } = parseFrontmatter(raw);
       const slug = data.slug ?? filename.replace(/\.mdx$/, "");
       items.push({ slug, frontmatter: data, body: content.trim(), filename });
     } catch (err) {
