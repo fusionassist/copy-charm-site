@@ -67,12 +67,19 @@ function ContactUsPage() {
               </div>
               <div>
                 <dt className="font-medium text-foreground">Phone</dt>
-                <dd className="mt-1 text-muted-foreground">+353 (0)61 472 250</dd>
+                <dd className="mt-1">
+                  <a
+                    className="text-primary underline-offset-4 hover:underline"
+                    href="tel:+353449672855"
+                  >
+                    +353 44 967 2855
+                  </a>
+                </dd>
               </div>
               <div>
                 <dt className="font-medium text-foreground">Office</dt>
                 <dd className="mt-1 text-muted-foreground">
-                  Annacotty Business Park, Limerick, Ireland
+                  Dromone, Oldcastle, Co. Meath, Ireland A82&nbsp;E0W4
                 </dd>
               </div>
             </dl>

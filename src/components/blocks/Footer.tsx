@@ -35,7 +35,7 @@ export function Footer() {
               education and corporate Ireland.
             </p>
             <p className="mt-4 text-xs text-white/60">
-              Annacotty Business Park, Limerick, Ireland
+              Dromone, Oldcastle, Co. Meath, Ireland A82&nbsp;E0W4
             </p>
           </div>
 
@@ -95,7 +95,11 @@ export function Footer() {
               </div>
               <div>
                 <dt className="sr-only">Phone</dt>
-                <dd className="text-white/80">+353 (0)61 472 250</dd>
+                <dd className="text-white/80">
+                  <a className="hover:text-white" href="tel:+353449672855">
+                    +353 44 967 2855
+                  </a>
+                </dd>
               </div>
               <div>
                 <dt className="sr-only">Office hours</dt>
