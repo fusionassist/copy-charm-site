@@ -10,6 +10,7 @@ import {
 
 import { Nav } from "@/components/nav/Nav";
 import { Footer } from "@/components/blocks/Footer";
+import { OdooLiveChat } from "@/components/chat/OdooLiveChat";
 import { OrganizationSchema } from "@/components/schema/OrganizationSchema";
 
 import appCss from "../styles.css?url";
@@ -106,6 +107,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
       <body>
         {children}
         <Scripts />
+        <OdooLiveChat />
       </body>
     </html>
   );

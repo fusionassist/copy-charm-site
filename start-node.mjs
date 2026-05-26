@@ -210,6 +210,31 @@ async function tryServeClientAsset(request) {
   });
 }
 
+// Builds the Odoo Live Chat <script> tags from env vars. Same shape as
+// what src/components/chat/OdooLiveChat.tsx renders for TanStack routes —
+// we keep both in sync so the chat bubble looks identical regardless of
+// which layer is rendering the page.
+function buildOdooChatSnippet() {
+  const base = (process.env.VITE_PUBLIC_ODOO_BASE_URL ?? "").replace(/\/+$/, "");
+  const channel = process.env.VITE_PUBLIC_ODOO_LIVECHAT_CHANNEL_ID;
+  if (!base || !channel) return "";
+  return [
+    `<script defer type="text/javascript" src="${base}/im_livechat/loader/${channel}"></script>`,
+    `<script defer type="text/javascript" src="${base}/im_livechat/assets_embed.js"></script>`,
+  ].join("");
+}
+
+const ODOO_CHAT_SNIPPET = buildOdooChatSnippet();
+
+function injectOdooChat(html) {
+  if (!ODOO_CHAT_SNIPPET) return html;
+  // Inject before </body>. If no </body> (rare malformed page), append.
+  if (html.includes("</body>")) {
+    return html.replace("</body>", ODOO_CHAT_SNIPPET + "</body>");
+  }
+  return html + ODOO_CHAT_SNIPPET;
+}
+
 async function tryServeMirror(request) {
   if (request.method !== "GET" && request.method !== "HEAD") return null;
   const url = new URL(request.url);
@@ -218,7 +243,17 @@ async function tryServeMirror(request) {
   if (!file) return null;
   const ext = extname(file).toLowerCase();
   const contentType = CONTENT_TYPES[ext] ?? "application/octet-stream";
-  const body = request.method === "HEAD" ? null : await readFile(file);
+  const isHtml = contentType.startsWith("text/html");
+  let body;
+  if (request.method === "HEAD") {
+    body = null;
+  } else if (isHtml && ODOO_CHAT_SNIPPET) {
+    // Read as utf8 string so we can inject the chat scripts before </body>
+    const raw = await readFile(file, "utf8");
+    body = injectOdooChat(raw);
+  } else {
+    body = await readFile(file);
+  }
   return new Response(body, {
     status: 200,
     headers: {
