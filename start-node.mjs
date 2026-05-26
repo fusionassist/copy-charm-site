@@ -12,15 +12,76 @@
 // Node's --env-file-if-exists flag (set in ~/bin/beta-node-supervisor.sh).
 
 import { serve } from "srvx/node";
-import { stat, readFile } from "node:fs/promises";
+import { stat, readFile, readdir } from "node:fs/promises";
 import { extname, join, resolve } from "node:path";
 import { z } from "zod";
+import matter from "gray-matter";
 import handler from "./dist/server/server.js";
 
 const MIRROR_DIR = resolve(process.cwd(), "wp-mirror");
 const CLIENT_DIR = resolve(process.cwd(), "dist", "client");
+const CONTENT_DIR = resolve(process.cwd(), "src", "content");
+const SITE_URL = process.env.VITE_PUBLIC_SITE_URL ?? "https://beta.interactivedisplays.ie";
 const PORT = process.env.PORT ?? 3000;
 const HOST = process.env.HOST ?? undefined;
+
+// IDI organisation metadata mirror — kept in sync with src/lib/site-meta.ts.
+// Hard-coded here because start-node.mjs runs outside the Vite build and
+// can't import from src/. Update both files when this changes.
+const ORG = {
+  name: "Interactive Displays Ireland",
+  tagline: "Digital signage, touchscreens and AV installation across Ireland",
+  description:
+    "Interactive Displays Ireland (IDI) supplies, installs and supports LED and LCD digital signage, interactive touchscreens, outdoor displays, kiosks and LED video walls for retail, hospitality, education, healthcare and corporate clients across Ireland. Family-run from Co. Meath since 2009. 3-year warranty as standard. Nationwide installation across all 32 counties.",
+  email: "sales@interactivedisplays.ie",
+  phone: "+353 44 967 2855",
+  address: "Dromone, Oldcastle, Co. Meath, Ireland A82 E0W4",
+  categories: [
+    { slug: "interactive", name: "Interactive Displays" },
+    { slug: "outdoor", name: "Outdoor Displays" },
+    { slug: "indoor", name: "Indoor Displays" },
+    { slug: "touchscreen", name: "Touchscreens & Kiosks" },
+    { slug: "led", name: "LED Video Walls" },
+    { slug: "self-ordering", name: "Self-Ordering Kiosks" },
+    { slug: "high-brightness", name: "High-Brightness Displays" },
+    { slug: "display", name: "Displays" },
+  ],
+  brands: [
+    { slug: "moytronix", name: "Moytronix (in-house IDI brand)" },
+    { slug: "promethean", name: "Promethean" },
+    { slug: "vestel", name: "Vestel" },
+  ],
+};
+
+const STATIC_PAGES = [
+  { path: "/", title: "Home", description: ORG.tagline, priority: "1.0", changefreq: "weekly" },
+  { path: "/contact-us", title: "Contact us", description: "Sales enquiries, contact form, office details.", priority: "0.9", changefreq: "monthly" },
+];
+
+// AI crawler user-agents we explicitly allow in robots.txt. IDI wants
+// AI-driven search to surface their products + content.
+const AI_CRAWLERS_ALLOWED = [
+  "GPTBot",
+  "ChatGPT-User",
+  "OAI-SearchBot",
+  "ClaudeBot",
+  "Claude-Web",
+  "anthropic-ai",
+  "PerplexityBot",
+  "Perplexity-User",
+  "Google-Extended",
+  "Bingbot",
+  "Applebot",
+  "Applebot-Extended",
+  "Amazonbot",
+  "CCBot",
+  "DuckAssistBot",
+  "cohere-ai",
+  "Bytespider",
+  "FacebookBot",
+  "ImagesiftBot",
+  "omgili",
+];
 
 // URL paths that should bypass the mirror and go straight to TanStack Start
 // (or our inline API handlers above the mirror layer).
@@ -31,6 +92,10 @@ const MIRROR_EXCLUDE = new Set([
   "/api/",
   "/contact-us",
   "/contact-us/",
+  "/llms.txt",
+  "/llms-full.txt",
+  "/robots.txt",
+  "/sitemap.xml",
 ]);
 // Exact-only matches (the homepage gets added back here when the React
 // homepage redesign is ready — for now it serves from the wp-mirror).
@@ -245,6 +310,314 @@ async function handleEmailTest(request) {
   }
 }
 
+// ─── MDX content loaded from disk (mirror of src/lib/mdx.ts) ─────────────────
+// These handlers run from start-node.mjs which is outside the Vite/MDX
+// build. Read raw .mdx files at runtime and parse frontmatter with
+// gray-matter — independent of the SSR bundle.
+
+async function loadContent(type) {
+  const dir = join(CONTENT_DIR, type);
+  let entries;
+  try {
+    entries = await readdir(dir);
+  } catch {
+    return [];
+  }
+  const items = [];
+  for (const filename of entries) {
+    if (!filename.endsWith(".mdx")) continue;
+    const fullPath = join(dir, filename);
+    try {
+      const raw = await readFile(fullPath, "utf8");
+      const { data, content } = matter(raw);
+      const slug = data.slug ?? filename.replace(/\.mdx$/, "");
+      items.push({ slug, frontmatter: data, body: content.trim(), filename });
+    } catch (err) {
+      console.error(`[content] failed to load ${fullPath}:`, err);
+    }
+  }
+  return items;
+}
+
+function pathForContent(type, slug) {
+  switch (type) {
+    case "products": return `/product/${slug}`;
+    case "posts":    return `/insights/${slug}`;
+    case "jobs":     return `/careers/${slug}`;
+    case "pages":    return `/${slug}`;
+    default:         return `/${slug}`;
+  }
+}
+
+// ─── /robots.txt ─────────────────────────────────────────────────────────────
+
+function handleRobots() {
+  const lines = [
+    "# robots.txt — interactivedisplays.ie",
+    "# AI crawlers are explicitly allowed; IDI wants products and",
+    "# content to surface in AI-powered search and chat agents.",
+    "",
+    "User-agent: *",
+    "Allow: /",
+    "Disallow: /api/",
+    "Disallow: /dev/",
+    "",
+    ...AI_CRAWLERS_ALLOWED.flatMap((ua) => [`User-agent: ${ua}`, "Allow: /", ""]),
+    `Sitemap: ${SITE_URL}/sitemap.xml`,
+    "",
+  ];
+  return new Response(lines.join("\n"), {
+    status: 200,
+    headers: {
+      "content-type": "text/plain; charset=utf-8",
+      "cache-control": "public, max-age=3600",
+    },
+  });
+}
+
+// ─── /sitemap.xml ────────────────────────────────────────────────────────────
+
+function xmlEscape(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
+async function handleSitemap() {
+  const [products, posts, jobs, pages] = await Promise.all([
+    loadContent("products"),
+    loadContent("posts"),
+    loadContent("jobs"),
+    loadContent("pages"),
+  ]);
+
+  const today = new Date().toISOString().split("T")[0];
+
+  const entries = [
+    ...STATIC_PAGES.map((p) => ({
+      loc: SITE_URL + p.path,
+      lastmod: today,
+      changefreq: p.changefreq,
+      priority: p.priority,
+    })),
+    ...products.map((p) => ({
+      loc: SITE_URL + pathForContent("products", p.slug),
+      lastmod: p.frontmatter.updatedAt ?? p.frontmatter.publishedAt ?? today,
+      changefreq: "monthly",
+      priority: "0.7",
+    })),
+    ...posts.map((p) => ({
+      loc: SITE_URL + pathForContent("posts", p.slug),
+      lastmod: p.frontmatter.updatedAt ?? p.frontmatter.publishedAt ?? today,
+      changefreq: "monthly",
+      priority: "0.6",
+    })),
+    ...jobs.map((j) => ({
+      loc: SITE_URL + pathForContent("jobs", j.slug),
+      lastmod: j.frontmatter.publishedAt ?? today,
+      changefreq: "weekly",
+      priority: "0.5",
+    })),
+    ...pages.map((p) => ({
+      loc: SITE_URL + pathForContent("pages", p.slug),
+      lastmod: today,
+      changefreq: "monthly",
+      priority: "0.8",
+    })),
+  ];
+
+  const body = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${entries
+  .map(
+    (e) =>
+      `  <url>
+    <loc>${xmlEscape(e.loc)}</loc>
+    <lastmod>${e.lastmod}</lastmod>
+    <changefreq>${e.changefreq}</changefreq>
+    <priority>${e.priority}</priority>
+  </url>`,
+  )
+  .join("\n")}
+</urlset>
+`;
+
+  return new Response(body, {
+    status: 200,
+    headers: {
+      "content-type": "application/xml; charset=utf-8",
+      "cache-control": "public, max-age=3600",
+    },
+  });
+}
+
+// ─── /llms.txt ───────────────────────────────────────────────────────────────
+// Karpathy-proposed standard (https://llmstxt.org/). A markdown outline
+// of the site for LLM agents to consume.
+
+async function handleLlmsTxt() {
+  const [products, posts, jobs, pages] = await Promise.all([
+    loadContent("products"),
+    loadContent("posts"),
+    loadContent("jobs"),
+    loadContent("pages"),
+  ]);
+
+  const lines = [
+    `# ${ORG.name}`,
+    "",
+    `> ${ORG.description}`,
+    "",
+    "## Contact",
+    "",
+    `- Phone: ${ORG.phone}`,
+    `- Email: ${ORG.email}`,
+    `- Office: ${ORG.address}`,
+    `- Website: ${SITE_URL}`,
+    `- Contact form: ${SITE_URL}/contact-us`,
+    "",
+    "## Product categories",
+    "",
+    ...ORG.categories.map(
+      (c) => `- [${c.name}](${SITE_URL}/product-category/${c.slug}/)`,
+    ),
+    "",
+    "## Brands we carry",
+    "",
+    ...ORG.brands.map((b) => `- [${b.name}](${SITE_URL}/brand/${b.slug}/)`),
+    "",
+    `## Products (${products.length})`,
+    "",
+    ...products.map((p) => {
+      const desc = p.frontmatter.shortDescription ?? p.frontmatter.metaDescription ?? "";
+      return `- [${p.frontmatter.title ?? p.slug}](${SITE_URL}${pathForContent("products", p.slug)}) — ${desc}`;
+    }),
+    "",
+    `## Insights / blog (${posts.length})`,
+    "",
+    ...posts.map((p) => {
+      const excerpt = p.frontmatter.excerpt ?? p.frontmatter.metaDescription ?? "";
+      return `- [${p.frontmatter.title ?? p.slug}](${SITE_URL}${pathForContent("posts", p.slug)}) — ${excerpt}`;
+    }),
+    "",
+    `## Service pages (${pages.length})`,
+    "",
+    ...pages.map((p) => {
+      const desc = p.frontmatter.metaDescription ?? "";
+      return `- [${p.frontmatter.title ?? p.slug}](${SITE_URL}${pathForContent("pages", p.slug)}) — ${desc}`;
+    }),
+    "",
+    `## Careers (${jobs.length})`,
+    "",
+    ...jobs.map((j) => {
+      const loc = j.frontmatter.location ?? "";
+      const type = j.frontmatter.employmentType ?? "";
+      return `- [${j.frontmatter.title ?? j.slug}](${SITE_URL}${pathForContent("jobs", j.slug)}) — ${loc}, ${type}`;
+    }),
+    "",
+    "## Optional resources for agents",
+    "",
+    `- [Full site content as markdown](${SITE_URL}/llms-full.txt) — every product, post, page and job concatenated`,
+    `- [XML sitemap](${SITE_URL}/sitemap.xml) — every public URL with lastmod`,
+    `- [Products as JSON](${SITE_URL}/api/products.json) — structured product data`,
+    `- [Posts as JSON](${SITE_URL}/api/posts.json) — structured blog data`,
+    `- [Jobs as JSON](${SITE_URL}/api/jobs.json) — open positions`,
+    `- [Pages as JSON](${SITE_URL}/api/pages.json) — service pages`,
+    `- [Contact form API](${SITE_URL}/api/contact) — POST JSON { name, email, phone?, company?, message } to create a lead. Returns { success: boolean, error?: string }.`,
+    "",
+  ];
+  return new Response(lines.join("\n"), {
+    status: 200,
+    headers: {
+      "content-type": "text/plain; charset=utf-8",
+      "cache-control": "public, max-age=600",
+    },
+  });
+}
+
+// ─── /llms-full.txt ──────────────────────────────────────────────────────────
+// Full content of the site assembled as one markdown document. Designed
+// for an LLM to consume in a single fetch.
+
+async function handleLlmsFullTxt() {
+  const [products, posts, jobs, pages] = await Promise.all([
+    loadContent("products"),
+    loadContent("posts"),
+    loadContent("jobs"),
+    loadContent("pages"),
+  ]);
+
+  const sections = [];
+  sections.push(`# ${ORG.name} — full site content\n\n${ORG.description}\n\n## Contact\n\n- Phone: ${ORG.phone}\n- Email: ${ORG.email}\n- Office: ${ORG.address}\n`);
+
+  const renderItem = (item, type) => {
+    const fm = item.frontmatter;
+    const url = SITE_URL + pathForContent(type, item.slug);
+    const meta = [
+      `URL: ${url}`,
+      fm.publishedAt ? `Published: ${fm.publishedAt}` : null,
+      fm.updatedAt ? `Updated: ${fm.updatedAt}` : null,
+      fm.category ? `Category: ${fm.category}` : null,
+      fm.brand ? `Brand: ${fm.brand}` : null,
+      fm.author ? `Author: ${fm.author}` : null,
+      fm.location ? `Location: ${fm.location}` : null,
+    ].filter(Boolean).join(" · ");
+    return `## ${fm.title ?? item.slug}\n\n${meta}\n\n${fm.metaDescription ?? fm.shortDescription ?? fm.excerpt ?? ""}\n\n${item.body}\n`;
+  };
+
+  if (products.length) {
+    sections.push(`---\n\n# Products (${products.length})`);
+    for (const p of products) sections.push(renderItem(p, "products"));
+  }
+  if (pages.length) {
+    sections.push(`---\n\n# Service pages (${pages.length})`);
+    for (const p of pages) sections.push(renderItem(p, "pages"));
+  }
+  if (posts.length) {
+    sections.push(`---\n\n# Insights / blog (${posts.length})`);
+    for (const p of posts) sections.push(renderItem(p, "posts"));
+  }
+  if (jobs.length) {
+    sections.push(`---\n\n# Open positions (${jobs.length})`);
+    for (const j of jobs) sections.push(renderItem(j, "jobs"));
+  }
+
+  return new Response(sections.join("\n"), {
+    status: 200,
+    headers: {
+      "content-type": "text/plain; charset=utf-8",
+      "cache-control": "public, max-age=600",
+    },
+  });
+}
+
+// ─── /api/{type}.json ────────────────────────────────────────────────────────
+// Structured JSON endpoints so agents don't have to parse HTML.
+
+async function handleContentJson(type) {
+  const items = await loadContent(type);
+  const payload = {
+    type,
+    count: items.length,
+    items: items.map((item) => ({
+      slug: item.slug,
+      url: SITE_URL + pathForContent(type, item.slug),
+      ...item.frontmatter,
+    })),
+  };
+  return new Response(JSON.stringify(payload, null, 2), {
+    status: 200,
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "public, max-age=600",
+      "access-control-allow-origin": "*",
+    },
+  });
+}
+
 // ─── /api/contact ────────────────────────────────────────────────────────────
 
 const leadSchema = z.object({
@@ -361,19 +734,31 @@ const server = serve({
   fetch: async (request) => {
     const url = new URL(request.url);
 
-    // 1. Dedicated API routes (handled inline)
-    if (url.pathname === "/api/contact") return handleContact(request);
+    // 1. AI-agent + SEO endpoints
+    if (url.pathname === "/robots.txt")     return handleRobots();
+    if (url.pathname === "/sitemap.xml")    return handleSitemap();
+    if (url.pathname === "/llms.txt")       return handleLlmsTxt();
+    if (url.pathname === "/llms-full.txt")  return handleLlmsFullTxt();
+
+    // 2. Content JSON endpoints
+    if (url.pathname === "/api/products.json") return handleContentJson("products");
+    if (url.pathname === "/api/posts.json")    return handleContentJson("posts");
+    if (url.pathname === "/api/jobs.json")     return handleContentJson("jobs");
+    if (url.pathname === "/api/pages.json")    return handleContentJson("pages");
+
+    // 3. Form + email API
+    if (url.pathname === "/api/contact")    return handleContact(request);
     if (url.pathname === "/api/email-test") return handleEmailTest(request);
 
-    // 2. Vite-built client assets (CSS/JS bundles for our TanStack routes)
+    // 4. Vite-built client assets (CSS/JS bundles for our TanStack routes)
     const assetResponse = await tryServeClientAsset(request);
     if (assetResponse) return assetResponse;
 
-    // 3. wp-mirror static serving
+    // 5. wp-mirror static serving
     const mirrorResponse = await tryServeMirror(request);
     if (mirrorResponse) return mirrorResponse;
 
-    // 4. TanStack Start SSR
+    // 6. TanStack Start SSR
     return handler.fetch(request);
   },
   port: PORT,

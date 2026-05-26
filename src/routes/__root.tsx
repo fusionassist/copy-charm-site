@@ -10,6 +10,7 @@ import {
 
 import { Nav } from "@/components/nav/Nav";
 import { Footer } from "@/components/blocks/Footer";
+import { OrganizationSchema } from "@/components/schema/OrganizationSchema";
 
 import appCss from "../styles.css?url";
 
@@ -121,6 +122,7 @@ function RootComponent() {
           <Outlet />
         </main>
         <Footer />
+        <OrganizationSchema />
       </div>
     </QueryClientProvider>
   );

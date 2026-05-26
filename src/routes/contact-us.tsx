@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { LeadForm } from "@/components/blocks/LeadForm";
+import { LocalBusinessSchema } from "@/components/schema/LocalBusinessSchema";
 
 export const Route = createFileRoute("/contact-us")({
   component: ContactUsPage,
@@ -27,6 +28,7 @@ function ContactUsPage() {
   // <main> is provided by __root.tsx (so we don't nest mains here).
   return (
     <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
+      <LocalBusinessSchema />
       <header className="mb-10 max-w-2xl">
         <p className="text-sm font-semibold uppercase tracking-wider text-brand-cyan">
           Interactive Displays Ireland
