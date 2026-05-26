@@ -1,6 +1,7 @@
 // @lovable.dev/vite-tanstack-config already includes tanstackStart, viteReact, tailwindcss,
 // tsConfigPaths, cloudflare, componentTagger, env injection, alias, etc.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import mdx from "@mdx-js/rollup";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -79,6 +80,13 @@ export default defineConfig({
     server: { entry: "server" },
   },
   vite: {
-    plugins: [serveMirror()],
+    plugins: [
+      // MDX must run BEFORE viteReact (which Lovable's wrapper adds) so the
+      // .mdx → JSX transform happens before React's plugin compiles JSX.
+      // enforce: "pre" ensures Vite runs this plugin first regardless of
+      // its position in the array.
+      { ...mdx({ jsxImportSource: "react" }), enforce: "pre" as const },
+      serveMirror(),
+    ],
   },
 });
