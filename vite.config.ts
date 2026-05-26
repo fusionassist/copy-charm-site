@@ -2,6 +2,8 @@
 // tsConfigPaths, cloudflare, componentTagger, env injection, alias, etc.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import mdx from "@mdx-js/rollup";
+import remarkFrontmatter from "remark-frontmatter";
+import remarkMdxFrontmatter from "remark-mdx-frontmatter";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -85,7 +87,16 @@ export default defineConfig({
       // .mdx → JSX transform happens before React's plugin compiles JSX.
       // enforce: "pre" ensures Vite runs this plugin first regardless of
       // its position in the array.
-      { ...mdx({ jsxImportSource: "react" }), enforce: "pre" as const },
+      {
+        ...mdx({
+          jsxImportSource: "react",
+          remarkPlugins: [
+            remarkFrontmatter,
+            [remarkMdxFrontmatter, { name: "frontmatter" }],
+          ],
+        }),
+        enforce: "pre" as const,
+      },
       serveMirror(),
     ],
   },

@@ -1,18 +1,17 @@
 // MDX content loaders.
 //
-// Two import flavours per content type:
-//   1. ?raw glob → returns the source text; parsed with gray-matter to
-//      expose frontmatter. Used by getAll*() to build indexes (sitemap,
-//      listing pages, etc.) without compiling every MDX file's JSX.
-//   2. Compiled glob (lazy) → returns the MDX-as-React-component when a
-//      specific slug is requested. Used by route loaders to render the
-//      full body.
+// Each MDX file in src/content/<type>/<slug>.mdx is processed by
+// @mdx-js/rollup with remark-mdx-frontmatter, which exposes the YAML
+// frontmatter as a named export called `frontmatter`. Vite's
+// import.meta.glob lets us load every file in a directory eagerly,
+// giving us both the React component (default export) and the
+// frontmatter (named export) in one shot.
 //
-// MDX files live in src/content/<type>/<slug>.mdx and use the
-// frontmatter shapes documented in CLAUDE.md §5.
+// Two patterns per content type:
+//   - getAll<Type>()      → frontmatter index for list pages / sitemap
+//   - get<Type>Component(slug) → React component for the full page
 
 import type { ComponentType } from "react";
-import matter from "gray-matter";
 
 // ─── Shared types ───────────────────────────────────────────────────────────
 
@@ -77,15 +76,17 @@ export type PageFrontmatter = {
 
 // ─── Internal helpers ───────────────────────────────────────────────────────
 
-type RawGlob = Record<string, string>;
-type LazyGlob<T = unknown> = Record<string, () => Promise<T>>;
-type CompiledModule = { default: ComponentType<Record<string, unknown>> };
+type MdxModule<F> = {
+  default: ComponentType<Record<string, unknown>>;
+  frontmatter: F;
+};
 
-function indexFromRaw<T>(glob: RawGlob): Array<WithPath<T>> {
-  return Object.entries(glob).map(([path, raw]) => {
-    const { data } = matter(raw);
-    const slug = (data as { slug?: string }).slug ?? slugFromPath(path);
-    return { ...(data as T), path, slug };
+function indexFromGlob<F extends { slug?: string }>(
+  glob: Record<string, MdxModule<F>>,
+): Array<WithPath<F>> {
+  return Object.entries(glob).map(([path, mod]) => {
+    const slug = mod.frontmatter?.slug ?? slugFromPath(path);
+    return { ...mod.frontmatter, path, slug } as WithPath<F>;
   });
 }
 
@@ -94,29 +95,23 @@ function slugFromPath(path: string): string {
   return base.replace(/\.mdx?$/, "");
 }
 
-async function componentFor(
-  glob: LazyGlob<CompiledModule>,
+function componentFromGlob<F>(
+  glob: Record<string, MdxModule<F>>,
   slug: string,
-): Promise<ComponentType<Record<string, unknown>> | null> {
+): ComponentType<Record<string, unknown>> | null {
   const entry = Object.entries(glob).find(([path]) => path.endsWith(`/${slug}.mdx`));
-  if (!entry) return null;
-  const [, loader] = entry;
-  const mod = await loader();
-  return mod.default;
+  return entry ? entry[1].default : null;
 }
 
 // ─── Products ───────────────────────────────────────────────────────────────
 
-const productRaw = import.meta.glob<string>("../content/products/*.mdx", {
-  eager: true,
-  query: "?raw",
-  import: "default",
-}) as RawGlob;
-
-const productComponents = import.meta.glob<CompiledModule>("../content/products/*.mdx");
+const productModules = import.meta.glob<MdxModule<ProductFrontmatter>>(
+  "../content/products/*.mdx",
+  { eager: true },
+);
 
 export function getAllProducts(): Array<WithPath<ProductFrontmatter>> {
-  return indexFromRaw<ProductFrontmatter>(productRaw).sort(
+  return indexFromGlob(productModules).sort(
     (a, b) => (b.publishedAt ?? "").localeCompare(a.publishedAt ?? ""),
   );
 }
@@ -126,21 +121,18 @@ export function getProduct(slug: string): WithPath<ProductFrontmatter> | null {
 }
 
 export function getProductComponent(slug: string) {
-  return componentFor(productComponents, slug);
+  return componentFromGlob(productModules, slug);
 }
 
 // ─── Posts ──────────────────────────────────────────────────────────────────
 
-const postRaw = import.meta.glob<string>("../content/posts/*.mdx", {
-  eager: true,
-  query: "?raw",
-  import: "default",
-}) as RawGlob;
-
-const postComponents = import.meta.glob<CompiledModule>("../content/posts/*.mdx");
+const postModules = import.meta.glob<MdxModule<PostFrontmatter>>(
+  "../content/posts/*.mdx",
+  { eager: true },
+);
 
 export function getAllPosts(): Array<WithPath<PostFrontmatter>> {
-  return indexFromRaw<PostFrontmatter>(postRaw).sort(
+  return indexFromGlob(postModules).sort(
     (a, b) => (b.publishedAt ?? "").localeCompare(a.publishedAt ?? ""),
   );
 }
@@ -150,21 +142,18 @@ export function getPost(slug: string): WithPath<PostFrontmatter> | null {
 }
 
 export function getPostComponent(slug: string) {
-  return componentFor(postComponents, slug);
+  return componentFromGlob(postModules, slug);
 }
 
 // ─── Jobs ───────────────────────────────────────────────────────────────────
 
-const jobRaw = import.meta.glob<string>("../content/jobs/*.mdx", {
-  eager: true,
-  query: "?raw",
-  import: "default",
-}) as RawGlob;
-
-const jobComponents = import.meta.glob<CompiledModule>("../content/jobs/*.mdx");
+const jobModules = import.meta.glob<MdxModule<JobFrontmatter>>(
+  "../content/jobs/*.mdx",
+  { eager: true },
+);
 
 export function getAllJobs(): Array<WithPath<JobFrontmatter>> {
-  return indexFromRaw<JobFrontmatter>(jobRaw).sort(
+  return indexFromGlob(jobModules).sort(
     (a, b) => (b.publishedAt ?? "").localeCompare(a.publishedAt ?? ""),
   );
 }
@@ -174,21 +163,18 @@ export function getJob(slug: string): WithPath<JobFrontmatter> | null {
 }
 
 export function getJobComponent(slug: string) {
-  return componentFor(jobComponents, slug);
+  return componentFromGlob(jobModules, slug);
 }
 
 // ─── Pages (service pages) ──────────────────────────────────────────────────
 
-const pageRaw = import.meta.glob<string>("../content/pages/*.mdx", {
-  eager: true,
-  query: "?raw",
-  import: "default",
-}) as RawGlob;
-
-const pageComponents = import.meta.glob<CompiledModule>("../content/pages/*.mdx");
+const pageModules = import.meta.glob<MdxModule<PageFrontmatter>>(
+  "../content/pages/*.mdx",
+  { eager: true },
+);
 
 export function getAllPages(): Array<WithPath<PageFrontmatter>> {
-  return indexFromRaw<PageFrontmatter>(pageRaw);
+  return indexFromGlob(pageModules);
 }
 
 export function getPage(slug: string): WithPath<PageFrontmatter> | null {
@@ -196,5 +182,5 @@ export function getPage(slug: string): WithPath<PageFrontmatter> | null {
 }
 
 export function getPageComponent(slug: string) {
-  return componentFor(pageComponents, slug);
+  return componentFromGlob(pageModules, slug);
 }
