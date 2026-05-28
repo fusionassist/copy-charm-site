@@ -43,6 +43,13 @@ const SITE_URL = process.env.VITE_PUBLIC_SITE_URL ?? "https://beta.interactivedi
 const PORT = process.env.PORT ?? 3000;
 const HOST = process.env.HOST ?? undefined;
 
+// When true (set on the beta/staging host), the whole site is walled off
+// from search engines: X-Robots-Tag: noindex on every response, robots.txt
+// disallows all, and the mirror's inherited "index,follow" meta is
+// rewritten to noindex. Prevents the staging copy from competing with the
+// live WordPress site in search. Flip to false at production cutover.
+const NOINDEX = process.env.SITE_NOINDEX === "true" || process.env.SITE_NOINDEX === "1";
+
 // IDI organisation metadata mirror — kept in sync with src/lib/site-meta.ts.
 // Hard-coded here because start-node.mjs runs outside the Vite build and
 // can't import from src/. Update both files when this changes.
@@ -251,7 +258,17 @@ function rewriteMirrorHtml(html) {
   for (const pattern of TAWK_PATTERNS) {
     out = out.replace(pattern, "");
   }
-  // 2. Inject Odoo Live Chat before </body> (if configured)
+  // 2. On staging, neutralise the mirror's inherited "index, follow" robots
+  //    meta so the staging copy isn't invited into search indexes. The
+  //    X-Robots-Tag header is authoritative, but rewriting the meta avoids
+  //    a confusing mixed signal.
+  if (NOINDEX) {
+    out = out.replace(
+      /<meta\s+name=["']robots["'][^>]*>/gi,
+      '<meta name="robots" content="noindex, nofollow"/>',
+    );
+  }
+  // 3. Inject Odoo Live Chat before </body> (if configured)
   if (ODOO_CHAT_SNIPPET) {
     out = out.includes("</body>")
       ? out.replace("</body>", ODOO_CHAT_SNIPPET + "</body>")
@@ -430,20 +447,31 @@ function pathForContent(type, slug) {
 // ─── /robots.txt ─────────────────────────────────────────────────────────────
 
 function handleRobots() {
-  const lines = [
-    "# robots.txt — interactivedisplays.ie",
-    "# AI crawlers are explicitly allowed; IDI wants products and",
-    "# content to surface in AI-powered search and chat agents.",
-    "",
-    "User-agent: *",
-    "Allow: /",
-    "Disallow: /api/",
-    "Disallow: /dev/",
-    "",
-    ...AI_CRAWLERS_ALLOWED.flatMap((ua) => [`User-agent: ${ua}`, "Allow: /", ""]),
-    `Sitemap: ${SITE_URL}/sitemap.xml`,
-    "",
-  ];
+  let lines;
+  if (NOINDEX) {
+    // Staging: keep everything out of search indexes.
+    lines = [
+      "# robots.txt — STAGING (beta). Indexing disabled until production cutover.",
+      "User-agent: *",
+      "Disallow: /",
+      "",
+    ];
+  } else {
+    lines = [
+      "# robots.txt — interactivedisplays.ie",
+      "# AI crawlers are explicitly allowed; IDI wants products and",
+      "# content to surface in AI-powered search and chat agents.",
+      "",
+      "User-agent: *",
+      "Allow: /",
+      "Disallow: /api/",
+      "Disallow: /dev/",
+      "",
+      ...AI_CRAWLERS_ALLOWED.flatMap((ua) => [`User-agent: ${ua}`, "Allow: /", ""]),
+      `Sitemap: ${SITE_URL}/sitemap.xml`,
+      "",
+    ];
+  }
   return new Response(lines.join("\n"), {
     status: 200,
     headers: {
@@ -808,36 +836,52 @@ async function handleContact(request) {
 
 // ─── Server ──────────────────────────────────────────────────────────────────
 
+async function route(request) {
+  const url = new URL(request.url);
+
+  // 1. AI-agent + SEO endpoints
+  if (url.pathname === "/robots.txt")     return handleRobots();
+  if (url.pathname === "/sitemap.xml")    return handleSitemap();
+  if (url.pathname === "/llms.txt")       return handleLlmsTxt();
+  if (url.pathname === "/llms-full.txt")  return handleLlmsFullTxt();
+
+  // 2. Content JSON endpoints
+  if (url.pathname === "/api/products.json") return handleContentJson("products");
+  if (url.pathname === "/api/posts.json")    return handleContentJson("posts");
+  if (url.pathname === "/api/jobs.json")     return handleContentJson("jobs");
+  if (url.pathname === "/api/pages.json")    return handleContentJson("pages");
+
+  // 3. Form + email API
+  if (url.pathname === "/api/contact")    return handleContact(request);
+  if (url.pathname === "/api/email-test") return handleEmailTest(request);
+
+  // 4. Vite-built client assets (CSS/JS bundles for our TanStack routes)
+  const assetResponse = await tryServeClientAsset(request);
+  if (assetResponse) return assetResponse;
+
+  // 5. wp-mirror static serving
+  const mirrorResponse = await tryServeMirror(request);
+  if (mirrorResponse) return mirrorResponse;
+
+  // 6. TanStack Start SSR
+  return handler.fetch(request);
+}
+
 const server = serve({
   fetch: async (request) => {
-    const url = new URL(request.url);
-
-    // 1. AI-agent + SEO endpoints
-    if (url.pathname === "/robots.txt")     return handleRobots();
-    if (url.pathname === "/sitemap.xml")    return handleSitemap();
-    if (url.pathname === "/llms.txt")       return handleLlmsTxt();
-    if (url.pathname === "/llms-full.txt")  return handleLlmsFullTxt();
-
-    // 2. Content JSON endpoints
-    if (url.pathname === "/api/products.json") return handleContentJson("products");
-    if (url.pathname === "/api/posts.json")    return handleContentJson("posts");
-    if (url.pathname === "/api/jobs.json")     return handleContentJson("jobs");
-    if (url.pathname === "/api/pages.json")    return handleContentJson("pages");
-
-    // 3. Form + email API
-    if (url.pathname === "/api/contact")    return handleContact(request);
-    if (url.pathname === "/api/email-test") return handleEmailTest(request);
-
-    // 4. Vite-built client assets (CSS/JS bundles for our TanStack routes)
-    const assetResponse = await tryServeClientAsset(request);
-    if (assetResponse) return assetResponse;
-
-    // 5. wp-mirror static serving
-    const mirrorResponse = await tryServeMirror(request);
-    if (mirrorResponse) return mirrorResponse;
-
-    // 6. TanStack Start SSR
-    return handler.fetch(request);
+    const response = await route(request);
+    // On staging, stamp X-Robots-Tag on every response so search engines
+    // keep the whole beta out of their indexes (authoritative over any
+    // page-level meta robots tag). robots.txt is excluded — crawlers must
+    // be able to read it to learn the Disallow rule.
+    if (NOINDEX && response && !new URL(request.url).pathname.endsWith("/robots.txt")) {
+      try {
+        response.headers.set("x-robots-tag", "noindex, nofollow");
+      } catch {
+        /* some streamed responses have immutable headers — safe to skip */
+      }
+    }
+    return response;
   },
   port: PORT,
   hostname: HOST,
