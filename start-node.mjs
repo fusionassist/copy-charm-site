@@ -218,8 +218,19 @@ function buildOdooChatSnippet() {
   const base = (process.env.VITE_PUBLIC_ODOO_BASE_URL ?? "").replace(/\/+$/, "");
   const channel = process.env.VITE_PUBLIC_ODOO_LIVECHAT_CHANNEL_ID;
   if (!base || !channel) return "";
+  // fusion_domain → CRM/helpdesk attribution in the custom fusion_ai_livechat
+  // module. Derive the host from the configured site URL.
+  let fusionDomain = "";
+  try {
+    fusionDomain = new URL(SITE_URL).hostname;
+  } catch {
+    fusionDomain = "";
+  }
+  const loaderSrc = fusionDomain
+    ? `${base}/im_livechat/loader/${channel}?fusion_domain=${encodeURIComponent(fusionDomain)}`
+    : `${base}/im_livechat/loader/${channel}`;
   return [
-    `<script defer type="text/javascript" src="${base}/im_livechat/loader/${channel}"></script>`,
+    `<script defer type="text/javascript" src="${loaderSrc}"></script>`,
     `<script defer type="text/javascript" src="${base}/im_livechat/assets_embed.js"></script>`,
   ].join("");
 }
