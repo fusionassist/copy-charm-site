@@ -226,13 +226,27 @@ function buildOdooChatSnippet() {
 
 const ODOO_CHAT_SNIPPET = buildOdooChatSnippet();
 
-function injectOdooChat(html) {
-  if (!ODOO_CHAT_SNIPPET) return html;
-  // Inject before </body>. If no </body> (rare malformed page), append.
-  if (html.includes("</body>")) {
-    return html.replace("</body>", ODOO_CHAT_SNIPPET + "</body>");
+// Legacy Tawk.to chat is baked into the wget mirror HTML. The migration
+// dropped Tawk entirely in favour of Odoo Live Chat, so strip every
+// trace of it from mirror responses.
+const TAWK_PATTERNS = [
+  /<script id="tawk-script"[\s\S]*?<\/script>/gi,
+  /<script[^>]*>[\s\S]*?embed\.tawk\.to[\s\S]*?<\/script>/gi,
+];
+
+function rewriteMirrorHtml(html) {
+  let out = html;
+  // 1. Strip legacy Tawk.to (always — independent of Odoo config)
+  for (const pattern of TAWK_PATTERNS) {
+    out = out.replace(pattern, "");
   }
-  return html + ODOO_CHAT_SNIPPET;
+  // 2. Inject Odoo Live Chat before </body> (if configured)
+  if (ODOO_CHAT_SNIPPET) {
+    out = out.includes("</body>")
+      ? out.replace("</body>", ODOO_CHAT_SNIPPET + "</body>")
+      : out + ODOO_CHAT_SNIPPET;
+  }
+  return out;
 }
 
 async function tryServeMirror(request) {
@@ -247,10 +261,10 @@ async function tryServeMirror(request) {
   let body;
   if (request.method === "HEAD") {
     body = null;
-  } else if (isHtml && ODOO_CHAT_SNIPPET) {
-    // Read as utf8 string so we can inject the chat scripts before </body>
+  } else if (isHtml) {
+    // Read HTML as utf8 so we can strip Tawk + inject Odoo chat
     const raw = await readFile(file, "utf8");
-    body = injectOdooChat(raw);
+    body = rewriteMirrorHtml(raw);
   } else {
     body = await readFile(file);
   }
