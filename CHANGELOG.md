@@ -8,6 +8,27 @@ Format inspired by [keepachangelog.com](https://keepachangelog.com/en/1.1.0/); n
 
 ## [Unreleased]
 
+### Fixed — 2026-05-29 — Mirror SEO tags (wget-mangled canonicals + og:url)
+
+The wp-mirror's HTML carries wget-mangled SEO metadata:
+- Homepage: `<link rel="canonical" href="../interactivedisplays.ie/index.html">`
+- Product: `<link rel="canonical" href="../../product/<slug>/">`
+- Category / brand: `<link rel="canonical" href="index.html">`
+- `<meta property="og:url" content="/">`
+
+All would point Google at non-existent / wrong URLs the moment beta becomes indexable at production cutover (canonicals are the strongest signal Google uses to deduplicate near-identical pages, and wrong canonicals cause de-indexing).
+
+Added `rewriteSeoTags()` to the mirror HTML pipeline in `start-node.mjs`. For every text/html mirror response it rewrites:
+- `<link rel="canonical">` → `<link rel="canonical" href="${SITE_URL}${path}">`
+- `<meta property="og:url">` → `<meta property="og:url" content="${SITE_URL}${path}">`
+- `<meta name="twitter:url">` → same target
+
+Anchored on `VITE_PUBLIC_SITE_URL`. At production cutover we change that env var from `https://beta.interactivedisplays.ie` to `https://interactivedisplays.ie` and every canonical follows automatically — no per-page edit, no SEO debt carried over.
+
+Why this matters NOW even though beta is noindexed: the day we flip noindex off, Google will discover and re-evaluate these canonicals. Fixing it pre-cutover means launch-day rankings inherit cleanly. Mirror was sitting on a launch-day landmine.
+
+Verified by curling a few page types before/after deploy — homepage, product, category, brand all now emit a canonical that points back at themselves on the configured site URL.
+
 ### Added — 2026-05-29 — Documentation system
 
 - `CHANGELOG.md` (this file) — back-filled with every commit since the wp-mirror move.

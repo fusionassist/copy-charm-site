@@ -277,6 +277,46 @@ function rewriteMirrorHtml(html) {
   return out;
 }
 
+// Rewrite SEO metadata that wget mangled when it snapshotted the legacy
+// WP site. Three failure modes seen on disk:
+//   homepage:  canonical="../interactivedisplays.ie/index.html"
+//   product:   canonical="../../product/android-a-board/"
+//   category:  canonical="index.html"  (just the local file name)
+//   og:url:    content="/index.html" or content="/"
+// Replace them all with the absolute URL Google should treat as canonical:
+// SITE_URL + the current request path. At cutover we flip SITE_URL from
+// beta to interactivedisplays.ie and every canonical follows automatically.
+function rewriteSeoTags(html, requestPath) {
+  if (!SITE_URL) return html;
+  // Normalise path: keep the leading slash; for the homepage `/`, drop the
+  // trailing slash so canonicals read as `https://host` (Google treats them
+  // as equivalent but the trailing-slash form is common WP convention).
+  const cleanPath = requestPath === "/" ? "/" : requestPath.replace(/\/+$/, "/");
+  const canonicalUrl = `${SITE_URL.replace(/\/+$/, "")}${cleanPath === "/" ? "/" : cleanPath}`;
+
+  let out = html;
+
+  // 1. <link rel="canonical" href="...">  — replace with absolute URL
+  out = out.replace(
+    /<link\s+[^>]*rel\s*=\s*["']canonical["'][^>]*>/gi,
+    `<link rel="canonical" href="${canonicalUrl}"/>`,
+  );
+
+  // 2. <meta property="og:url" content="..."> — same target
+  out = out.replace(
+    /<meta\s+[^>]*property\s*=\s*["']og:url["'][^>]*>/gi,
+    `<meta property="og:url" content="${canonicalUrl}"/>`,
+  );
+
+  // 3. <meta name="twitter:url" content="..."> — same target (some pages have this)
+  out = out.replace(
+    /<meta\s+[^>]*name\s*=\s*["']twitter:url["'][^>]*>/gi,
+    `<meta name="twitter:url" content="${canonicalUrl}"/>`,
+  );
+
+  return out;
+}
+
 async function tryServeMirror(request) {
   if (request.method !== "GET" && request.method !== "HEAD") return null;
   const url = new URL(request.url);
@@ -290,9 +330,12 @@ async function tryServeMirror(request) {
   if (request.method === "HEAD") {
     body = null;
   } else if (isHtml) {
-    // Read HTML as utf8 so we can strip Tawk + inject Odoo chat
+    // Read HTML as utf8 so we can run the rewriter pipeline:
+    //   strip Tawk → fix wget-mangled canonical/og:url → optional noindex
+    //   meta rewrite → inject Odoo chat
     const raw = await readFile(file, "utf8");
-    body = rewriteMirrorHtml(raw);
+    const seoFixed = rewriteSeoTags(raw, url.pathname);
+    body = rewriteMirrorHtml(seoFixed);
   } else {
     body = await readFile(file);
   }
