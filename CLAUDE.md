@@ -105,6 +105,9 @@ copy-charm-site/
 - `/product/<slug>/`, `/product-category/<slug>/`, `/brand/<slug>/`, `/insights/...`, `/careers/...`, `/contact-us/` (the legacy WP form — but `/contact-us` without slash hits TanStack first via MIRROR_EXCLUDE)
 - All `wp-content/...` and `wp-includes/...` assets
 
+### 301 legacy URL redirects (highest priority — runs before everything)
+- `/?p=<N>` / `/index.php?p=<N>` / `/?page_id=<N>` / `/index.html@p=<N>.html` → 301 to canonical pretty-permalink target. 60 IDs mapped from the wp-mirror's preserved Rank Math canonicals. See `src/lib/redirects.ts` (documented source) and the `POST_ID_MAP` constant in `start-node.mjs` (the runtime copy — must stay in sync).
+
 ### API + AI-agent endpoints (handled in `start-node.mjs`)
 - `POST /api/contact` — zod-validated, sends via Graph; Reply-To set to lead address
 - `GET /api/email-test` — smoke test

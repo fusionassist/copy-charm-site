@@ -8,6 +8,23 @@ Format inspired by [keepachangelog.com](https://keepachangelog.com/en/1.1.0/); n
 
 ## [Unreleased]
 
+### Added — 2026-05-29 — 301 redirect map for legacy WP post-ID URLs
+
+Catalogued every `?p=N` URL the legacy WP site exposed. 67 distinct post-IDs mapped to their canonical pretty-permalink path, extracted by reading the `<link rel="canonical">` out of each `wp-mirror/index.html@p=<id>.html` file. 7 IDs (924/948/957/970/988/995/999) produced no canonical (orphaned/deleted) and are intentionally omitted — they 404 cleanly rather than redirect somewhere wrong.
+
+Wired into `start-node.mjs` as a top-priority route layer (runs before `/robots.txt`, before mirror, before SSR). `resolveRedirect(pathname, search)` handles three input shapes:
+- `/?p=N` (the WP canonical legacy form)
+- `/index.php?p=N` and `/?page_id=N` (equivalent WP forms)
+- `/index.html@p=N.html` (the wget cached form — rare but harmless)
+
+All redirects are 301 (permanent) with `Cache-Control: max-age=86400`. Verified with `curl -I` across ~10 sample IDs that they target the right page.
+
+Why this matters: at production cutover, Google's index has these `?p=N` URLs from years of WP serving. Without the map, every one becomes a duplicate-content collision (the mirror's resolver doesn't understand query params, so `/?p=877` serves the same HTML as `/`). With the map, every legacy URL Google has indexed inherits its rank into the canonical equivalent.
+
+Source-of-truth audit lives at `src/lib/redirects.ts` (documented, with the full `RedirectRule` type for future custom rules). `start-node.mjs` mirrors the data inline because it runs outside the Vite/TS build (same pattern as the ORG constant). Update both when adding a new rule.
+
+Also expanded `sitemap.xml` from 6 URLs to ~75 — added every canonical URL known to the site (products, categories, brands, service pages, careers, blog posts) so Google has a comprehensive list to crawl post-launch. Sitemap URLs anchor on `SITE_URL` so they flip automatically at cutover.
+
 ### Fixed — 2026-05-29 — Mirror SEO tags (wget-mangled canonicals + og:url)
 
 The wp-mirror's HTML carries wget-mangled SEO metadata:

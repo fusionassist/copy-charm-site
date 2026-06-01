@@ -83,6 +83,92 @@ const STATIC_PAGES = [
   { path: "/contact-us", title: "Contact us", description: "Sales enquiries, contact form, office details.", priority: "0.9", changefreq: "monthly" },
 ];
 
+// Canonical URL targets known to the site from the wp-mirror — every URL
+// in POST_ID_MAP.values() is a real page Google should index. Used by
+// /sitemap.xml so Google's view of the site is comprehensive even though
+// most of these pages are still mirror-served. Deduplicated + sorted at
+// build time so the sitemap output is stable.
+const MIRROR_PAGES = [
+  // Service pages
+  "/supply-installation/",
+  "/training-support/",
+  "/content-management-creation/",
+  "/queue-management-system/",
+  "/digital-ticket/",
+  "/online-appointment/",
+  "/customer-counting-solution/",
+  "/satisfaction-survey/",
+  "/corporate-reception-solution/",
+  "/vending-machines/",
+  "/food-business-digital-menu-board/",
+  // Insights / blog
+  "/choosing-the-right-digital-signage/",
+  "/how-digital-screen-displays-can-increase-footfall-and-sales/",
+  "/digital-signage-in-modern-retail/",
+  "/interactive-whiteboards-in-schools/",
+  "/how-irish-retailers-are-boosting-sales-with-digital-signage/",
+  "/outdoor-digital-signage-in-ireland/",
+  // Careers
+  "/careers/",
+  "/careers/av-business-development/",
+  "/careers/technical-support-specialist/",
+  "/careers/stores-coordinator/",
+  "/careers/account-manager/",
+  "/careers/installation-and-service-technician/",
+  // Products — taken from POST_ID_MAP /product/* values
+  "/product/pcap-touch-screen/",
+  "/product/pcap-kiosk-screen/",
+  "/product/slim-freestanding-totem/",
+  "/product/pos-touch-screen/",
+  "/product/mirror-touch-screen/",
+  "/product/self-service-touchscreen-kiosk/",
+  "/product/freestanding-outdoor-display/",
+  "/product/mounted-outdoor-display/",
+  "/product/android-a-board/",
+  "/product/outdoor-self-service-kiosk/",
+  "/product/ultra-high-bright-display/",
+  "/product/ultra-high-bright-display-tni/",
+  "/product/hanging-dual-sided-display/",
+  "/product/professional-monitor/",
+  "/product/large-format-signage/",
+  "/product/lcd-video-wall/",
+  "/product/android-network-display/",
+  "/product/dual-sided-standing-totem/",
+  "/product/slim-standing-totem/",
+  "/product/network-menu-boards/",
+  "/product/pos-advertising-display/",
+  "/product/outdoor-self-service-kiosk-2/",
+  "/product/self-service-kiosk/",
+  "/product/drive-thru-screen/",
+  "/product/slim-self-service-kiosk/",
+  "/product/vestel-stm-series/",
+  "/product/crystal-flex-led/",
+  "/product/indoor-led-video-wall/",
+  "/product/outdoor-led-video-wall/",
+  "/product/transparent-led-display/",
+  "/product/ar-mirror/",
+  "/product/promethean-activpanel/",
+  "/product/new-ifx-series/",
+  "/product/digital-ticketing-system/",
+  "/product/led-box-signage/",
+  // Categories
+  "/product-category/interactive/",
+  "/product-category/outdoor/",
+  "/product-category/indoor/",
+  "/product-category/touchscreen/",
+  "/product-category/led/",
+  "/product-category/self-ordering/",
+  "/product-category/high-brightness/",
+  "/product-category/display/",
+  // Brands
+  "/brand/moytronix/",
+  "/brand/promethean/",
+  "/brand/vestel/",
+  // Top-level navigation
+  "/shop/",
+  "/insights/",
+];
+
 // AI crawler user-agents we explicitly allow in robots.txt. IDI wants
 // AI-driven search to surface their products + content.
 const AI_CRAWLERS_ALLOWED = [
@@ -107,6 +193,89 @@ const AI_CRAWLERS_ALLOWED = [
   "ImagesiftBot",
   "omgili",
 ];
+
+// 301-redirect map — see src/lib/redirects.ts for the documented version.
+// Mirrored here because start-node.mjs runs outside the Vite/TS build and
+// can't import from src/. Keep this in sync with src/lib/redirects.ts —
+// the source-of-truth audit lives there.
+const POST_ID_MAP = {
+  "117":  "/product/pcap-touch-screen/",
+  "368":  "/contact-us/",
+  "589":  "/product/pcap-kiosk-screen/",
+  "638":  "/how-irish-retailers-are-boosting-sales-with-digital-signage/",
+  "724":  "/supply-installation/",
+  "791":  "/product/slim-freestanding-totem/",
+  "805":  "/product/pos-touch-screen/",
+  "818":  "/product/mirror-touch-screen/",
+  "825":  "/product/self-service-touchscreen-kiosk/",
+  "861":  "/product/freestanding-outdoor-display/",
+  "869":  "/product/mounted-outdoor-display/",
+  "877":  "/product/android-a-board/",
+  "886":  "/product/outdoor-self-service-kiosk/",
+  "890":  "/product/ultra-high-bright-display/",
+  "898":  "/product/ultra-high-bright-display-tni/",
+  "905":  "/product/hanging-dual-sided-display/",
+  "914":  "/product/professional-monitor/",
+  "922":  "/product/large-format-signage/",
+  "930":  "/product/lcd-video-wall/",
+  "937":  "/product/android-network-display/",
+  "945":  "/product/dual-sided-standing-totem/",
+  "949":  "/product/slim-standing-totem/",
+  "956":  "/product/network-menu-boards/",
+  "1002": "/product/pos-advertising-display/",
+  "1005": "/product/outdoor-self-service-kiosk-2/",
+  "1022": "/product/self-service-kiosk/",
+  "1023": "/product/drive-thru-screen/",
+  "1029": "/product/slim-self-service-kiosk/",
+  "1047": "/product/vestel-stm-series/",
+  "1051": "/product/crystal-flex-led/",
+  "1056": "/product/indoor-led-video-wall/",
+  "1063": "/product/outdoor-led-video-wall/",
+  "1071": "/product/transparent-led-display/",
+  "1076": "/product/ar-mirror/",
+  "1082": "/product/promethean-activpanel/",
+  "1119": "/product/new-ifx-series/",
+  "1248": "/training-support/",
+  "1261": "/content-management-creation/",
+  "1286": "/queue-management-system/",
+  "1316": "/digital-ticket/",
+  "1335": "/online-appointment/",
+  "1352": "/customer-counting-solution/",
+  "1361": "/satisfaction-survey/",
+  "1372": "/corporate-reception-solution/",
+  "1428": "/choosing-the-right-digital-signage/",
+  "1448": "/how-digital-screen-displays-can-increase-footfall-and-sales/",
+  "1479": "/digital-signage-in-modern-retail/",
+  "1498": "/interactive-whiteboards-in-schools/",
+  "1507": "/vending-machines/",
+  "1598": "/product/digital-ticketing-system/",
+  "1611": "/outdoor-digital-signage-in-ireland/",
+  "1648": "/food-business-digital-menu-board/",
+  "1762": "/product/led-box-signage/",
+  "1821": "/careers/av-business-development/",
+  "1912": "/careers/technical-support-specialist/",
+  "1915": "/careers/stores-coordinator/",
+  "1918": "/careers/account-manager/",
+  "1923": "/careers/installation-and-service-technician/",
+  "1926": "/careers/",
+};
+
+function resolveRedirect(pathname, search) {
+  // /?p=N or /index.php?p=N or /?page_id=N
+  if (pathname === "/" || pathname === "/index.php") {
+    const params = new URLSearchParams(search);
+    const postId = params.get("p") ?? params.get("page_id");
+    if (postId && POST_ID_MAP[postId]) {
+      return { target: POST_ID_MAP[postId], status: 301 };
+    }
+  }
+  // /index.html@p=N.html  — wget cached form (rare in the wild but harmless to handle)
+  const wgetMatch = pathname.match(/^\/index\.html@p=(\d+)\.html$/);
+  if (wgetMatch && POST_ID_MAP[wgetMatch[1]]) {
+    return { target: POST_ID_MAP[wgetMatch[1]], status: 301 };
+  }
+  return null;
+}
 
 // URL paths that should bypass the mirror and go straight to TanStack Start
 // (or our inline API handlers above the mirror layer).
@@ -546,6 +715,12 @@ async function handleSitemap() {
   const today = new Date().toISOString().split("T")[0];
 
   const entries = [
+    ...MIRROR_PAGES.map((path) => ({
+      loc: SITE_URL + path,
+      lastmod: today,
+      changefreq: path.startsWith("/product/") ? "monthly" : "weekly",
+      priority: path.startsWith("/product/") ? "0.7" : "0.6",
+    })),
     ...STATIC_PAGES.map((p) => ({
       loc: SITE_URL + p.path,
       lastmod: today,
@@ -881,6 +1056,25 @@ async function handleContact(request) {
 
 async function route(request) {
   const url = new URL(request.url);
+
+  // 0. Legacy URL → canonical 301 (highest priority — preserves SEO equity
+  //    on every link Google/Bing has indexed under WP's ?p=N shape).
+  //    Runs before everything else so cached legacy URLs never touch the
+  //    mirror or SSR layers.
+  if (request.method === "GET" || request.method === "HEAD") {
+    const redirect = resolveRedirect(url.pathname, url.search);
+    if (redirect) {
+      const targetUrl = new URL(redirect.target, url.origin).toString();
+      return new Response(null, {
+        status: redirect.status,
+        headers: {
+          location: targetUrl,
+          "cache-control": "public, max-age=86400",
+          "x-served-by": "redirect",
+        },
+      });
+    }
+  }
 
   // 1. AI-agent + SEO endpoints
   if (url.pathname === "/robots.txt")     return handleRobots();
