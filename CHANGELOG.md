@@ -8,6 +8,20 @@ Format inspired by [keepachangelog.com](https://keepachangelog.com/en/1.1.0/); n
 
 ## [Unreleased]
 
+### Fixed — 2026-06-08 — /elementor-6/ URL leak
+
+The legacy WP site stored its homepage as an Elementor template at /elementor-6/index.html. wget preserved internal relative links to that path in ~150 mirror HTML files — clicking the logo or the "Home" nav link on any mirror page navigated the browser to https://interactivedisplays.ie/elementor-6/index.html. Ugly URL, duplicate-content collision with /, and meaningless to anyone outside the WP backend.
+
+Two-layer fix in start-node.mjs:
+
+1. Mirror HTML rewriter — folds every variant of the link back to "/":
+   `href="elementor-6/index.html"` / `href="../elementor-6/index.html"` /
+   `href="/elementor-6/"` etc.
+
+2. Permanent 301 — any request for /elementor-6/* (with or without index.html, with or without trailing slash) gets a 301 to /. Catches inbound external links and Google's existing index of the path.
+
+Verified with curl after deploy.
+
 ### Added — 2026-06-08 — REDIRECT_TO_HOST env flag for atomic prod cutover
 
 Adds an env-driven permanent host redirect. When `REDIRECT_TO_HOST=<host>` is set and a request arrives with a different `Host` header, the server returns a 301 to `https://<host>${pathname}${search}`.

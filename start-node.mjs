@@ -292,6 +292,12 @@ function resolveRedirect(pathname, search) {
   if (wgetMatch && POST_ID_MAP[wgetMatch[1]]) {
     return { target: POST_ID_MAP[wgetMatch[1]], status: 301 };
   }
+  // /elementor-6/* — legacy WordPress + Elementor homepage template path.
+  // Same content as /, so any visitor (or Googlebot) hitting it gets
+  // 301'd to the canonical homepage.
+  if (/^\/elementor-6\/?(?:index\.html)?$/i.test(pathname)) {
+    return { target: "/", status: 301 };
+  }
   return null;
 }
 
@@ -445,6 +451,25 @@ function rewriteMirrorHtml(html) {
   for (const pattern of TAWK_PATTERNS) {
     out = out.replace(pattern, "");
   }
+  // 1b. WordPress + Elementor served the homepage template at
+  // /elementor-6/index.html and link rewrites in the mirror still point
+  // every nav-to-home / logo-click at it (~150 mirror files). The URL is
+  // ugly, hurts SEO (duplicate content with /), and is meaningless to
+  // anyone outside the WP backend. Fold every such link back to /.
+  // Patterns seen in the wild:
+  //   href="elementor-6/index.html"  (most common, relative)
+  //   href="../elementor-6/index.html"  (subpages going up to root)
+  //   href="../../elementor-6/index.html"
+  //   href="/elementor-6/index.html"  (absolute)
+  //   href="/elementor-6/"
+  out = out.replace(
+    /href="(?:\.\.\/)*elementor-6\/(?:index\.html)?"/gi,
+    'href="/"',
+  );
+  out = out.replace(
+    /href="\/elementor-6\/(?:index\.html)?"/gi,
+    'href="/"',
+  );
   // 2. On staging, neutralise the mirror's inherited "index, follow" robots
   //    meta so the staging copy isn't invited into search indexes. The
   //    X-Robots-Tag header is authoritative, but rewriting the meta avoids
