@@ -62,6 +62,12 @@ const HOST = process.env.HOST ?? undefined;
 // live WordPress site in search. Flip to false at production cutover.
 const NOINDEX = process.env.SITE_NOINDEX === "true" || process.env.SITE_NOINDEX === "1";
 
+// Permanent 301 from the staging host to production. Set on the SAME app
+// after cutover when this directory becomes production (then we still
+// receive any inbound traffic to beta.interactivedisplays.ie and forward
+// it permanently). When unset, request flows continue normally.
+const REDIRECT_TO_HOST = process.env.REDIRECT_TO_HOST || "";
+
 // IDI organisation metadata mirror — kept in sync with src/lib/site-meta.ts.
 // Hard-coded here because start-node.mjs runs outside the Vite build and
 // can't import from src/. Update both files when this changes.
@@ -1311,6 +1317,30 @@ async function handleContact(request) {
 
 async function route(request) {
   const url = new URL(request.url);
+
+  // -1. Permanent host redirect — when REDIRECT_TO_HOST is set, any request
+  //     whose Host header doesn't match the target hostname gets a 301 to
+  //     the same path + query on the target host. Used after cutover so
+  //     traffic to beta.interactivedisplays.ie permanently forwards to
+  //     interactivedisplays.ie. Verification crawlers' paths are exempt so
+  //     ownership doesn't depend on which hostname is hit.
+  if (REDIRECT_TO_HOST && url.host !== REDIRECT_TO_HOST) {
+    const isExemptPath =
+      url.pathname === "/robots.txt" ||
+      url.pathname === "/BingSiteAuth.xml" ||
+      /^\/google[0-9a-f]+\.html$/i.test(url.pathname);
+    if (!isExemptPath) {
+      const targetUrl = `https://${REDIRECT_TO_HOST}${url.pathname}${url.search}`;
+      return new Response(null, {
+        status: 301,
+        headers: {
+          location: targetUrl,
+          "cache-control": "public, max-age=86400",
+          "x-served-by": "host-redirect",
+        },
+      });
+    }
+  }
 
   // 0. Legacy URL → canonical 301 (highest priority — preserves SEO equity
   //    on every link Google/Bing has indexed under WP's ?p=N shape).

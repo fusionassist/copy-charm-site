@@ -8,6 +8,16 @@ Format inspired by [keepachangelog.com](https://keepachangelog.com/en/1.1.0/); n
 
 ## [Unreleased]
 
+### Added — 2026-06-08 — REDIRECT_TO_HOST env flag for atomic prod cutover
+
+Adds an env-driven permanent host redirect. When `REDIRECT_TO_HOST=<host>` is set and a request arrives with a different `Host` header, the server returns a 301 to `https://<host>${pathname}${search}`.
+
+Designed for post-cutover use: after the same Node app starts serving `interactivedisplays.ie`, set `REDIRECT_TO_HOST=interactivedisplays.ie` on the SAME app and any inbound traffic to `beta.interactivedisplays.ie` permanently forwards to the prod URL. Preserves any external links indexed under beta + transfers their PageRank to the prod equivalent.
+
+Webmaster verification paths (`/robots.txt`, `/google*.html`, `/BingSiteAuth.xml`) are exempt — ownership checks must work on both hosts independently. (Verification crawlers fetch on the literal hostname they were registered for; a 301 would fail the check.)
+
+Inert until cutover. Currently `REDIRECT_TO_HOST` is unset on the server, so request flow is unchanged.
+
 ### Fixed — 2026-06-08 — 502 Bad Gateway / process crash on malformed URIs
 
 Production was returning 502 across the whole site. Two compounding bugs:
