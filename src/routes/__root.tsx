@@ -12,6 +12,8 @@ import { Nav } from "@/components/nav/Nav";
 import { Footer } from "@/components/blocks/Footer";
 import { OdooLiveChat } from "@/components/chat/OdooLiveChat";
 import { OrganizationSchema } from "@/components/schema/OrganizationSchema";
+import { TrackingScripts } from "@/components/tracking/TrackingScripts";
+import { ContactClickTracker } from "@/components/tracking/ContactClickTracker";
 
 import appCss from "../styles.css?url";
 
@@ -130,6 +132,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
       <body>
         {children}
         <Scripts />
+        <TrackingScripts />
         <OdooLiveChat />
       </body>
     </html>
@@ -148,6 +151,7 @@ function RootComponent() {
         </main>
         <Footer />
         <OrganizationSchema />
+        <ContactClickTracker />
       </div>
     </QueryClientProvider>
   );

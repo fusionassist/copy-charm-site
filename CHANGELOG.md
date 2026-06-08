@@ -8,6 +8,19 @@ Format inspired by [keepachangelog.com](https://keepachangelog.com/en/1.1.0/); n
 
 ## [Unreleased]
 
+### Added — 2026-06-08 — Tracking script injection (pre-wired, env-gated)
+
+Built the plumbing for Google Tag Manager, Google Analytics 4, Google Ads conversion tracking, Meta Pixel, and LinkedIn Insight Tag. **Inert until env vars are set** — no tracking scripts ship until you populate `VITE_PUBLIC_GTM_ID`, `VITE_PUBLIC_GA4_ID`, `VITE_PUBLIC_GOOGLE_ADS_ID`, `VITE_PUBLIC_META_PIXEL_ID`, or `VITE_PUBLIC_LINKEDIN_PARTNER_ID` in `.env.local`. Each tracker is independent — setting just one activates only that tracker.
+
+Components added:
+- `src/components/tracking/TrackingScripts.tsx` — renders the right `<script>` tags into the TanStack route HTML based on which env vars are set. Reads `import.meta.env.VITE_PUBLIC_*` at build time. Mounted in `__root.tsx` body.
+- `src/components/tracking/ContactClickTracker.tsx` — global click delegation that emits `phone_click` / `email_click` events for any `tel:` or `mailto:` link clicked anywhere on the page. Mounted in `__root.tsx`.
+- `src/lib/track.ts` — `track(event)` dispatcher. Single API for emitting conversion events; fans out to `gtag`, `dataLayer.push`, and `fbq` as available. Map our internal event shape to standard GA4 + Meta event names. Used by `LeadForm.tsx` to fire `lead_form_submit` (→ `generate_lead` / Meta `Lead`) on form success.
+
+For mirror pages, `start-node.mjs:rewriteMirrorHtml` now also injects the same tracking snippets — `<script>` blocks before `</head>` and `<noscript>` fallbacks immediately after `<body>`. Same inline click-delegation handler for `tel:`/`mailto:` so phone/email click events fire on legacy WP pages too. All env-driven from the same VITE_PUBLIC_* vars.
+
+When IDs are added later: SSH in → `nano ~/apps/copy-charm-site/.env.local` → set the IDs → `kill $(cat logs/app.pid) && ~/bin/beta-node-supervisor.sh` (or `./deploy.sh` if also rebuilding). Tracking activates within seconds, no code change needed.
+
 ### Fixed — 2026-06-08 — Sitemap "Invalid date" errors in GSC
 
 After GSC accepted the sitemap (77 URLs discovered), the validator reported 3 URLs with "Invalid date" lastmod values. Diagnosed: js-yaml auto-parses unquoted YAML dates like `updatedAt: 2025-08-22` to JavaScript Date objects. When concatenated into XML without normalisation, those Date objects stringify as `Fri Aug 22 2025 01:00:00 GMT+0100 (Irish Standard Time)` — not Google's accepted W3C date format.

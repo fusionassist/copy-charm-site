@@ -454,6 +454,70 @@ function buildOdooChatSnippet() {
 
 const ODOO_CHAT_SNIPPET = buildOdooChatSnippet();
 
+// Tracking script snippets — env-driven, inert when env vars are unset.
+// Same shape as src/components/tracking/TrackingScripts.tsx renders for
+// TanStack routes. Injected into mirror HTML before </head> for top-of-
+// page trackers and before </body> for the Meta Pixel <noscript>
+// fallback. Click events on tel:/mailto: links bubble up via a small
+// inline click handler injected with the GTM/GA4 block.
+function buildTrackingSnippet() {
+  const gtm = process.env.VITE_PUBLIC_GTM_ID;
+  const ga4 = process.env.VITE_PUBLIC_GA4_ID;
+  const ads = process.env.VITE_PUBLIC_GOOGLE_ADS_ID;
+  const meta = process.env.VITE_PUBLIC_META_PIXEL_ID;
+  const linkedin = process.env.VITE_PUBLIC_LINKEDIN_PARTNER_ID;
+  const parts = [];
+
+  if (gtm) {
+    parts.push(`<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${gtm}');</script>`);
+  }
+  const gtagPrimary = ga4 || ads;
+  if (gtagPrimary) {
+    const configs = [];
+    if (ga4) configs.push(`gtag('config', '${ga4}');`);
+    if (ads) configs.push(`gtag('config', '${ads}');`);
+    parts.push(`<script async src="https://www.googletagmanager.com/gtag/js?id=${gtagPrimary}"></script>`);
+    parts.push(`<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());${configs.join("")}</script>`);
+  }
+  if (meta) {
+    parts.push(`<script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init', '${meta}');fbq('track', 'PageView');</script>`);
+  }
+  if (linkedin) {
+    parts.push(`<script>_linkedin_partner_id="${linkedin}";window._linkedin_data_partner_ids=window._linkedin_data_partner_ids||[];window._linkedin_data_partner_ids.push(_linkedin_partner_id);(function(l){if(!l){window.lintrk=function(a,b){window.lintrk.q.push([a,b])};window.lintrk.q=[]}var s=document.getElementsByTagName("script")[0];var b=document.createElement("script");b.type="text/javascript";b.async=true;b.src="https://snap.licdn.com/li.lms-analytics/insight.min.js";s.parentNode.insertBefore(b,s);})(window.lintrk);</script>`);
+  }
+
+  // Tel:/mailto: click delegation — same logic as the React
+  // ContactClickTracker, but inline JS so it works on mirror pages too.
+  // Only emit when any tracker is active.
+  if (parts.length) {
+    parts.push(`<script>document.addEventListener('click',function(e){var a=e.target&&e.target.closest&&e.target.closest('a');if(!a)return;var h=a.getAttribute('href')||'';if(h.indexOf('tel:')===0){if(window.gtag)gtag('event','phone_call',{phone:h.slice(4)});if(window.fbq)fbq('track','Contact',{phone:h.slice(4)});if(window.dataLayer)dataLayer.push({event:'phone_call',phone:h.slice(4)});}else if(h.indexOf('mailto:')===0){var em=h.slice(7).split('?')[0];if(window.gtag)gtag('event','email_click',{email:em});if(window.fbq)fbq('track','Contact',{email:em});if(window.dataLayer)dataLayer.push({event:'email_click',email:em});}},true);</script>`);
+  }
+
+  return parts.join("");
+}
+
+// GTM also requires a <noscript> iframe inside the body. Built separately
+// so we inject it before </body>, not inside <head>.
+function buildTrackingBodyNoscript() {
+  const gtm = process.env.VITE_PUBLIC_GTM_ID;
+  const meta = process.env.VITE_PUBLIC_META_PIXEL_ID;
+  const linkedin = process.env.VITE_PUBLIC_LINKEDIN_PARTNER_ID;
+  const parts = [];
+  if (gtm) {
+    parts.push(`<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=${gtm}" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>`);
+  }
+  if (meta) {
+    parts.push(`<noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=${meta}&ev=PageView&noscript=1" alt=""/></noscript>`);
+  }
+  if (linkedin) {
+    parts.push(`<noscript><img height="1" width="1" style="display:none" alt="" src="https://px.ads.linkedin.com/collect/?pid=${linkedin}&fmt=gif"/></noscript>`);
+  }
+  return parts.join("");
+}
+
+const TRACKING_HEAD_SNIPPET = buildTrackingSnippet();
+const TRACKING_BODY_NOSCRIPT = buildTrackingBodyNoscript();
+
 // Legacy Tawk.to chat is baked into the wget mirror HTML. The migration
 // dropped Tawk entirely in favour of Odoo Live Chat, so strip every
 // trace of it from mirror responses.
@@ -503,7 +567,19 @@ function rewriteMirrorHtml(html) {
       '<meta name="robots" content="noindex, nofollow"/>',
     );
   }
-  // 3. Inject Odoo Live Chat before </body> (if configured)
+  // 3. Inject tracking scripts before </head> (if any tracker is
+  //    configured). Inert when no env vars are set.
+  if (TRACKING_HEAD_SNIPPET) {
+    out = out.includes("</head>")
+      ? out.replace("</head>", TRACKING_HEAD_SNIPPET + "</head>")
+      : out;
+  }
+  // 4. Tracking noscript fallbacks immediately AFTER <body> (per GTM
+  //    + Meta Pixel spec; LinkedIn doesn't care)
+  if (TRACKING_BODY_NOSCRIPT) {
+    out = out.replace(/<body([^>]*)>/i, `<body$1>${TRACKING_BODY_NOSCRIPT}`);
+  }
+  // 5. Inject Odoo Live Chat before </body> (if configured)
   if (ODOO_CHAT_SNIPPET) {
     out = out.includes("</body>")
       ? out.replace("</body>", ODOO_CHAT_SNIPPET + "</body>")

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { track } from "@/lib/track";
 
 const leadSchema = z.object({
   name: z.string().min(1, "Please enter your name").max(120),
@@ -49,6 +50,9 @@ export function LeadForm() {
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok && data?.success) {
+        // Fire conversion events to all configured trackers (GA4, Google
+        // Ads, Meta Pixel, GTM dataLayer). Inert until env vars are set.
+        track({ type: "lead_form_submit" });
         setStatus("success");
         reset();
       } else {
