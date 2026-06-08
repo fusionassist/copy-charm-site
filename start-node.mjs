@@ -304,6 +304,17 @@ function resolveRedirect(pathname, search) {
   if (/^\/interactivedisplays\.ie\/?(?:index\.html)?$/i.test(pathname)) {
     return { target: "/", status: 301 };
   }
+  // Legacy Rank Math sitemap paths — the WP site used a multi-file
+  // sitemap index (sitemap_index.xml + per-type sitemaps). Google Search
+  // Console, external SEO tools, and other sites linking to those URLs
+  // get a 301 to our new combined /sitemap.xml so no submission record
+  // dead-ends at a 404.
+  if (
+    pathname === "/sitemap_index.xml" ||
+    /^\/(post|page|product|product_cat|product-cat|product_tag|product-tag|category|brand|author)-sitemap\d*\.xml$/i.test(pathname)
+  ) {
+    return { target: "/sitemap.xml", status: 301 };
+  }
   return null;
 }
 

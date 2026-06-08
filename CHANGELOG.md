@@ -8,6 +8,14 @@ Format inspired by [keepachangelog.com](https://keepachangelog.com/en/1.1.0/); n
 
 ## [Unreleased]
 
+### Fixed — 2026-06-08 — Legacy Rank Math sitemap URLs 404'd in GSC
+
+Google Search Console's existing sitemap submission for `interactivedisplays.ie` pointed at `/sitemap_index.xml` — Rank Math's multi-file sitemap index from the legacy WP site. wget never captured those dynamic files, so GSC was hitting 404s and showing "Couldn't fetch".
+
+Added 301 redirects for all Rank Math sitemap shapes — `/sitemap_index.xml` plus per-type `/post-sitemap.xml`, `/page-sitemap.xml`, `/product-sitemap.xml`, `/product_cat-sitemap.xml`, `/product_tag-sitemap.xml`, `/category-sitemap.xml`, `/brand-sitemap.xml`, `/author-sitemap.xml` (with optional digit suffix). All forward to our new combined `/sitemap.xml`.
+
+Means anyone who has the old sitemap URL bookmarked (search engines, SEO tools, external sites referencing it) follows a clean 301 to the new sitemap. GSC's stale "Couldn't fetch" status will clear once we resubmit.
+
 ### Fixed — 2026-06-08 — Post-cutover SEO assessment cleanup
 
 Ran a comprehensive external SEO probe immediately after the prod cutover (sitemap reachability, per-page meta, JSON-LD structure, AI-agent endpoints, social previews, performance, legacy URL equity). Three real findings to address:
