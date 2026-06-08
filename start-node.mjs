@@ -526,10 +526,42 @@ const TAWK_PATTERNS = [
   /<script[^>]*>[\s\S]*?embed\.tawk\.to[\s\S]*?<\/script>/gi,
 ];
 
+// Legacy WP tracking (gtag.js, GTM container, Meta Pixel) baked into the
+// mirror HTML. IDs found in the wget snapshot:
+//   GT-M3LVT37 (gtag.js)
+//   GTM-NS2W7ML (Google Tag Manager)
+//   1422006029068970 (Facebook Pixel)
+// These could be firing to old / unknown analytics accounts every time
+// someone visits a mirror page. Strip them so the only trackers active
+// are the ones explicitly configured via VITE_PUBLIC_* env vars.
+const LEGACY_TRACKING_PATTERNS = [
+  // gtag.js loader scripts (any ID)
+  /<script[^>]*src=["'][^"']*googletagmanager\.com\/gtag\/js[^"']*["'][^>]*><\/script>/gi,
+  // GTM container loader scripts
+  /<script[^>]*src=["'][^"']*googletagmanager\.com\/gtm\.js[^"']*["'][^>]*><\/script>/gi,
+  // GTM noscript iframes
+  /<noscript[^>]*>[\s\S]*?googletagmanager\.com\/ns\.html[\s\S]*?<\/noscript>/gi,
+  // Inline gtag('config', ...) blocks
+  /<script[^>]*>[\s\S]*?gtag\s*\(\s*['"]config['"][\s\S]*?<\/script>/gi,
+  // Facebook Pixel loader + fbq('init', ...)
+  /<script[^>]*>[\s\S]*?fbq\s*\(\s*['"]init['"][\s\S]*?<\/script>/gi,
+  // Facebook Pixel noscript fallback
+  /<noscript[^>]*>[\s\S]*?facebook\.com\/tr\?id=[\s\S]*?<\/noscript>/gi,
+  // Connect.facebook.net loader fragments left inline
+  /<script[^>]*src=["'][^"']*connect\.facebook\.net[^"']*["'][^>]*><\/script>/gi,
+];
+
 function rewriteMirrorHtml(html) {
   let out = html;
   // 1. Strip legacy Tawk.to (always — independent of Odoo config)
   for (const pattern of TAWK_PATTERNS) {
+    out = out.replace(pattern, "");
+  }
+  // 1a. Strip legacy GA / GTM / Meta Pixel tracking baked into the mirror.
+  //     The current new tracking is env-driven and injected by the rewriter;
+  //     having both running side-by-side would double-count or hit unknown
+  //     accounts. Strip first, inject our own (if configured) at the end.
+  for (const pattern of LEGACY_TRACKING_PATTERNS) {
     out = out.replace(pattern, "");
   }
   // 1b. WordPress + Elementor served the homepage template at

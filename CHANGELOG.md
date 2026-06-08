@@ -8,6 +8,17 @@ Format inspired by [keepachangelog.com](https://keepachangelog.com/en/1.1.0/); n
 
 ## [Unreleased]
 
+### Fixed — 2026-06-08 — Strip legacy WP tracking baked into mirror
+
+When verifying the pre-wired tracking infrastructure didn't leak, discovered the wp-mirror HTML had **legacy gtag.js + GTM + Meta Pixel scripts hard-coded** from the previous WP install:
+- Google Tag `GT-M3LVT37` loading on every mirror page
+- GTM container `GTM-NS2W7ML` (noscript iframe)
+- Meta Pixel `1422006029068970` firing PageView on every mirror page
+
+These were firing to whatever accounts they belong to every time someone visited a mirror page — could be the old WP setup, could be someone else's accounts. Either way they're orphaned and shouldn't be running.
+
+Added `LEGACY_TRACKING_PATTERNS` to the mirror rewriter that strips: gtag.js loaders (any ID), GTM container loaders, GTM noscript iframes, inline gtag('config', ...) blocks, Meta Pixel loader + fbq('init', ...), Meta noscript fallback, and `connect.facebook.net` script fragments. Runs before our env-driven tracking injection so old + new can't double-fire.
+
 ### Added — 2026-06-08 — Tracking script injection (pre-wired, env-gated)
 
 Built the plumbing for Google Tag Manager, Google Analytics 4, Google Ads conversion tracking, Meta Pixel, and LinkedIn Insight Tag. **Inert until env vars are set** — no tracking scripts ship until you populate `VITE_PUBLIC_GTM_ID`, `VITE_PUBLIC_GA4_ID`, `VITE_PUBLIC_GOOGLE_ADS_ID`, `VITE_PUBLIC_META_PIXEL_ID`, or `VITE_PUBLIC_LINKEDIN_PARTNER_ID` in `.env.local`. Each tracker is independent — setting just one activates only that tracker.
