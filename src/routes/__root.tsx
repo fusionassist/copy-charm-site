@@ -73,18 +73,41 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+  // Root-level meta. Per-route head() overrides title / description /
+  // og:image where applicable; everything else inherits here. og:image
+  // is a brand-default; routes with their own imagery override it.
   head: () => ({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "Interactive Displays Ireland — Digital Signage, Touchscreens & Kiosks" },
+      {
+        name: "description",
+        content:
+          "Interactive Displays Ireland (IDI) supplies, installs and supports LED and LCD digital signage, interactive touchscreens, outdoor displays, kiosks and LED video walls for retail, hospitality, education, healthcare and corporate clients across Ireland.",
+      },
+      { name: "author", content: "Interactive Displays Ireland" },
+      { property: "og:title", content: "Interactive Displays Ireland" },
+      {
+        property: "og:description",
+        content:
+          "Digital signage, touchscreens and AV installation across Ireland — backed by a 3-year warranty, supported nationwide.",
+      },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
+      { property: "og:site_name", content: "Interactive Displays Ireland" },
+      { property: "og:locale", content: "en_IE" },
+      {
+        property: "og:image",
+        content: "https://beta.interactivedisplays.ie/brand/og-default.png",
+      },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { property: "og:image:alt", content: "Interactive Displays Ireland" },
+      { name: "twitter:card", content: "summary_large_image" },
+      {
+        name: "twitter:image",
+        content: "https://beta.interactivedisplays.ie/brand/og-default.png",
+      },
     ],
     links: [
       { rel: "stylesheet", href: appCss },

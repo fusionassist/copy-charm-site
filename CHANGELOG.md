@@ -8,6 +8,51 @@ Format inspired by [keepachangelog.com](https://keepachangelog.com/en/1.1.0/); n
 
 ## [Unreleased]
 
+### Fixed — 2026-06-08 — 502 Bad Gateway / process crash on malformed URIs
+
+Production was returning 502 across the whole site. Two compounding bugs:
+
+1. `decodeURIComponent(url.pathname)` in `tryServeMirror` threw `URIError: URI malformed` whenever a request came in with bad %-encoding (drive-by scanners hit `/%FF`, `/%E0%A4%A`, etc. all day). Unhandled → Node 24 terminated the process.
+2. The cron supervisor's PID check (`kill -0 $(cat pidfile)`) returned success for a stale PID. The supervisor thought the app was running for hours after it actually died.
+
+Three layers of defence added:
+- `safeDecodePath()` wraps `decodeURIComponent` — returns `null` on malformed input, mirror handler falls through to TanStack 404 instead of throwing
+- Process-level `uncaughtException` + `unhandledRejection` handlers log loudly but don't exit. Any other unforeseen async exception is now a logged warning, not a process death.
+- Supervisor rewritten on the server with a stricter `is_app_healthy()`: PID exists AND belongs to a process whose cmdline contains `start-node.mjs` AND something is listening on port 3417. Stale PID files no longer fool it; if any check fails, the supervisor kills the lingering PID and starts fresh. Logged restart events go to app.log with timestamp.
+
+Verified: `curl /%FF` used to crash → now returns 400 cleanly without affecting subsequent requests. Process stayed alive through several deliberate bad-URL hits.
+
+### Added — 2026-06-08 — Default OG image + per-page schema injection on mirror
+
+Three SEO improvements in one commit:
+
+**Default OG image (`public/brand/og-default.png`, 1200×630, ~140 KB).** Brand-navy gradient background, white IDI logo, white tagline ("Digital signage that earns its place"), cyan dot accent. Used by TanStack `__root.tsx` as the default `og:image` + `twitter:image` for routes that don't override it. Built programmatically via .NET drawing — full source in the commit message of [this commit].
+
+**TanStack root meta cleaned up.** The original `__root.tsx` carried Lovable-default meta (`title: "Lovable App"`, `description: "Lovable Generated Project"`, `twitter:site: @Lovable`). Replaced with proper IDI defaults: real title, real description, `og:site_name`, `og:locale=en_IE`, `og:image`, `twitter:card=summary_large_image`, `twitter:image`. Per-route `head()` overrides on more specific pages (`/contact-us` etc.) still win.
+
+**Schema.org JSON-LD injection on mirror pages.** The mirror's WP/Rank Math meta provides high-quality data (`og:title`, `og:description`, `og:image`, `og:type`, `article:published_time`, `product:price:currency`, etc.) but no JSON-LD. The mirror HTML rewriter now extracts those values and emits an appropriate JSON-LD block in `<head>` per URL pattern:
+- `/product/*` → Product schema with name, description, image, brand, offer (currency + availability)
+- `/insights/*` and the 6 legacy direct-mounted blog paths → Article schema (with publisher, datePublished, dateModified)
+- `/careers/<slug>` (not `/careers/` index) → JobPosting schema with hiringOrganization + jobLocation
+- Top-level service pages (training-support, supply-installation, etc.) → Service schema with provider + areaServed
+- `/product-category/*` and `/brand/*` → CollectionPage schema
+
+Schema reads from existing meta on every page render — no per-page hard-coded data. Adding a new product is just dropping its HTML in `wp-mirror/`; the schema appears automatically.
+
+**Same rewriter also absolutizes og:image URLs** — they were relative (`/wp-content/...`), which broke previews in LinkedIn, WhatsApp, Slack, Discord. Now they're absolute `${SITE_URL}/wp-content/...` and social previews will render with the actual product photo.
+
+### Added — 2026-06-08 — Webmaster Tools verification endpoints
+
+`GET /google<random>.html` and `GET /BingSiteAuth.xml` handlers added. Both are env-driven:
+- `GSC_VERIFICATION=googleXXXX.html` — set to the verification filename Google Search Console gives you
+- `BING_VERIFICATION_CODE=XXXX...` — set to the code inside Bing's `BingSiteAuth.xml`
+
+When unset, the handlers don't match — fall through cleanly. When set, they emit the verification content needed.
+
+**Critically, these endpoints are exempt from the `X-Robots-Tag: noindex` wrapper** that's applied to every other response while `SITE_NOINDEX=true`. Verification crawlers must be able to fetch the verification content before launch (when the beta is still walled off from search). New `isNoindexExempt()` helper in the serve wrapper centralises the exemption list — currently `/robots.txt`, `/google*.html`, `/BingSiteAuth.xml`.
+
+To wire up: in Google Search Console / Bing Webmaster Tools, register `beta.interactivedisplays.ie` (or eventually production), pick the HTML file verification method, copy the verification filename/code into the server's `.env.local`, restart. Verification succeeds; can then submit sitemap, monitor coverage, etc.
+
 ### Added — 2026-05-29 — 301 redirect map for legacy WP post-ID URLs
 
 Catalogued every `?p=N` URL the legacy WP site exposed. 67 distinct post-IDs mapped to their canonical pretty-permalink path, extracted by reading the `<link rel="canonical">` out of each `wp-mirror/index.html@p=<id>.html` file. 7 IDs (924/948/957/970/988/995/999) produced no canonical (orphaned/deleted) and are intentionally omitted — they 404 cleanly rather than redirect somewhere wrong.

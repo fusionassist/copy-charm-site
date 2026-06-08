@@ -467,6 +467,195 @@ function rewriteMirrorHtml(html) {
 // Replace them all with the absolute URL Google should treat as canonical:
 // SITE_URL + the current request path. At cutover we flip SITE_URL from
 // beta to interactivedisplays.ie and every canonical follows automatically.
+// Extract og:* / meta content values from mirror HTML. Returns null when
+// not present. Used by both rewriteSeoTags() (to absolutize og:image) and
+// buildPageSchema() (to mint Product / Service / Article JSON-LD).
+function extractMeta(html, selector) {
+  // selector: { property: "og:image" } or { name: "description" }
+  const key = selector.property ? "property" : "name";
+  const val = selector.property ?? selector.name;
+  const re = new RegExp(
+    `<meta\\s+[^>]*${key}\\s*=\\s*["']${val.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\$&")}["'][^>]*content\\s*=\\s*["']([^"']*)["']`,
+    "i",
+  );
+  const m = html.match(re);
+  if (m) return m[1];
+  // Fallback: content might come before the property
+  const re2 = new RegExp(
+    `<meta\\s+[^>]*content\\s*=\\s*["']([^"']*)["'][^>]*${key}\\s*=\\s*["']${val.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\$&")}["']`,
+    "i",
+  );
+  const m2 = html.match(re2);
+  return m2 ? m2[1] : null;
+}
+
+function absolutizeUrl(maybeRelative) {
+  if (!maybeRelative) return null;
+  if (/^https?:\/\//i.test(maybeRelative)) return maybeRelative;
+  const base = SITE_URL.replace(/\/+$/, "");
+  if (maybeRelative.startsWith("/")) return base + maybeRelative;
+  return `${base}/${maybeRelative}`;
+}
+
+function htmlDecode(str) {
+  if (!str) return str;
+  return str
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'");
+}
+
+function escapeJsonLd(str) {
+  if (!str) return "";
+  // Backslash-escape any </ that could close the script tag.
+  return String(str).replace(/<\/(script)/gi, "<\\/$1");
+}
+
+// Build a JSON-LD <script> block appropriate for the page type. URL pattern
+// is the primary classifier; og:type from the existing Rank Math meta is the
+// secondary signal (eg. /training-support/ has og:type=article on disk but
+// it's really a service page).
+function buildPageSchema(html, requestPath, canonicalUrl) {
+  const title = htmlDecode(extractMeta(html, { property: "og:title" }) ?? "");
+  const description = htmlDecode(
+    extractMeta(html, { property: "og:description" }) ??
+      extractMeta(html, { name: "description" }) ??
+      "",
+  );
+  const ogImage = absolutizeUrl(extractMeta(html, { property: "og:image" }));
+  const ogType = extractMeta(html, { property: "og:type" });
+  const ogUpdated = extractMeta(html, { property: "og:updated_time" });
+  const articlePublished = extractMeta(html, { property: "article:published_time" });
+  const articleModified = extractMeta(html, { property: "article:modified_time" });
+  const productCurrency = extractMeta(html, { property: "product:price:currency" });
+  const productAvailability = extractMeta(html, { property: "product:availability" });
+
+  if (!title) return ""; // Don't emit empty schema
+
+  const orgRef = {
+    "@type": "Organization",
+    "@id": `${SITE_URL.replace(/\/+$/, "")}/#organization`,
+    name: "Interactive Displays Ireland",
+    url: SITE_URL,
+  };
+
+  let payload;
+
+  // 1. Product pages → Product schema
+  if (requestPath.startsWith("/product/")) {
+    payload = {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name: title,
+      description,
+      url: canonicalUrl,
+      brand: orgRef,
+      ...(ogImage ? { image: ogImage } : {}),
+      ...(productCurrency
+        ? {
+            offers: {
+              "@type": "Offer",
+              priceCurrency: productCurrency,
+              availability:
+                productAvailability === "instock"
+                  ? "https://schema.org/InStock"
+                  : "https://schema.org/PreOrder",
+              url: canonicalUrl,
+              seller: orgRef,
+            },
+          }
+        : {}),
+    };
+  }
+  // 2. Insights / blog posts → Article schema
+  else if (
+    requestPath.startsWith("/insights/") ||
+    requestPath.match(
+      /^\/(choosing-the-right-digital-signage|digital-signage-in-modern-retail|how-irish-retailers-are-boosting-sales-with-digital-signage|how-digital-screen-displays-can-increase-footfall-and-sales|interactive-whiteboards-in-schools|outdoor-digital-signage-in-ireland|food-business-digital-menu-board)\/$/,
+    )
+  ) {
+    payload = {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      headline: title,
+      description,
+      url: canonicalUrl,
+      ...(ogImage ? { image: ogImage } : {}),
+      author: orgRef,
+      publisher: orgRef,
+      ...(articlePublished ? { datePublished: articlePublished } : {}),
+      ...(articleModified
+        ? { dateModified: articleModified }
+        : ogUpdated
+          ? { dateModified: ogUpdated }
+          : {}),
+      mainEntityOfPage: { "@type": "WebPage", "@id": canonicalUrl },
+    };
+  }
+  // 3. Career listings → JobPosting (sparse — full data isn't in the meta)
+  else if (requestPath.startsWith("/careers/") && requestPath !== "/careers/") {
+    payload = {
+      "@context": "https://schema.org",
+      "@type": "JobPosting",
+      title,
+      description,
+      url: canonicalUrl,
+      ...(ogImage ? { image: ogImage } : {}),
+      hiringOrganization: orgRef,
+      ...(articlePublished ? { datePosted: articlePublished } : {}),
+      jobLocation: {
+        "@type": "Place",
+        address: {
+          "@type": "PostalAddress",
+          addressCountry: "IE",
+          addressRegion: "Ireland",
+        },
+      },
+    };
+  }
+  // 4. Top-level service pages → Service schema
+  else if (
+    requestPath.match(
+      /^\/(supply-installation|training-support|content-management-creation|queue-management-system|digital-ticket|online-appointment|customer-counting-solution|satisfaction-survey|corporate-reception-solution|vending-machines)\/$/,
+    )
+  ) {
+    payload = {
+      "@context": "https://schema.org",
+      "@type": "Service",
+      name: title,
+      description,
+      url: canonicalUrl,
+      ...(ogImage ? { image: ogImage } : {}),
+      provider: orgRef,
+      areaServed: { "@type": "Country", name: "Ireland" },
+      serviceType: title,
+    };
+  }
+  // 5. Product category / brand listing pages → CollectionPage
+  else if (
+    requestPath.startsWith("/product-category/") ||
+    requestPath.startsWith("/brand/")
+  ) {
+    payload = {
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      name: title,
+      description,
+      url: canonicalUrl,
+      ...(ogImage ? { image: ogImage } : {}),
+      isPartOf: orgRef,
+    };
+  } else {
+    return ""; // Page type we don't have a schema mapping for — skip
+  }
+
+  const json = escapeJsonLd(JSON.stringify(payload));
+  return `<script type="application/ld+json" data-injected="mirror">${json}</script>`;
+}
+
 function rewriteSeoTags(html, requestPath) {
   if (!SITE_URL) return html;
   // Normalise path: keep the leading slash; for the homepage `/`, drop the
@@ -474,6 +663,7 @@ function rewriteSeoTags(html, requestPath) {
   // as equivalent but the trailing-slash form is common WP convention).
   const cleanPath = requestPath === "/" ? "/" : requestPath.replace(/\/+$/, "/");
   const canonicalUrl = `${SITE_URL.replace(/\/+$/, "")}${cleanPath === "/" ? "/" : cleanPath}`;
+  const baseUrl = SITE_URL.replace(/\/+$/, "");
 
   let out = html;
 
@@ -489,12 +679,52 @@ function rewriteSeoTags(html, requestPath) {
     `<meta property="og:url" content="${canonicalUrl}"/>`,
   );
 
-  // 3. <meta name="twitter:url" content="..."> — same target (some pages have this)
+  // 3. <meta name="twitter:url" content="..."> — same target
   out = out.replace(
     /<meta\s+[^>]*name\s*=\s*["']twitter:url["'][^>]*>/gi,
     `<meta name="twitter:url" content="${canonicalUrl}"/>`,
   );
 
+  // 4. <meta property="og:image" content="/relative/path"> — absolutize to
+  //    SITE_URL so social platforms (LinkedIn, WhatsApp, Slack, Discord)
+  //    can fetch the image for their preview cards. Same for og:image:secure_url
+  //    and twitter:image.
+  const absolutizeImg = (raw) => {
+    if (!raw) return raw;
+    return raw.replace(
+      /content\s*=\s*["']([^"']+)["']/i,
+      (_, src) => {
+        const abs = absolutizeUrl(src);
+        return `content="${abs}"`;
+      },
+    );
+  };
+  out = out.replace(
+    /<meta\s+[^>]*property\s*=\s*["']og:image["'][^>]*>/gi,
+    (m) => absolutizeImg(m),
+  );
+  out = out.replace(
+    /<meta\s+[^>]*property\s*=\s*["']og:image:secure_url["'][^>]*>/gi,
+    (m) => absolutizeImg(m),
+  );
+  out = out.replace(
+    /<meta\s+[^>]*name\s*=\s*["']twitter:image["'][^>]*>/gi,
+    (m) => absolutizeImg(m),
+  );
+
+  // 5. Build a Schema.org JSON-LD block for the page type. Injected just
+  //    before </head> so it sits with the other meta tags. Uses the existing
+  //    og:* values, so this is purely additive — no duplication of data,
+  //    just a parsed form that Google/Bing/AI agents can read directly.
+  const schemaBlock = buildPageSchema(html, requestPath, canonicalUrl);
+  if (schemaBlock) {
+    out = out.includes("</head>")
+      ? out.replace("</head>", schemaBlock + "</head>")
+      : out + schemaBlock;
+  }
+
+  // Silence unused warning — baseUrl reserved for future per-section logic
+  void baseUrl;
   return out;
 }
 
@@ -1101,6 +1331,34 @@ async function route(request) {
     }
   }
 
+  // 0.5 Webmaster ownership verification files. These MUST work even when
+  //     SITE_NOINDEX is on — verification crawlers fetch them pre-launch.
+  //     ENV-driven so you don't commit verification IDs:
+  //       GSC_VERIFICATION=googleXXXXXXXXXXXX.html    (the filename only)
+  //       BING_VERIFICATION_CODE=XXXXXX...            (the value inside BingSiteAuth.xml)
+  //     Drop the actual verification ID into .env.local when you add the
+  //     property in Google Search Console / Bing Webmaster Tools.
+  if (url.pathname.match(/^\/google[0-9a-f]+\.html$/i)) {
+    const expected = process.env.GSC_VERIFICATION;
+    if (expected && url.pathname.slice(1).toLowerCase() === expected.toLowerCase()) {
+      const tag = expected.replace(/\.html$/i, "");
+      return new Response(`google-site-verification: ${tag}\n`, {
+        status: 200,
+        headers: { "content-type": "text/plain; charset=utf-8" },
+      });
+    }
+  }
+  if (url.pathname === "/BingSiteAuth.xml") {
+    const code = process.env.BING_VERIFICATION_CODE;
+    if (code) {
+      const xml = `<?xml version="1.0"?>\n<users>\n  <user>${code}</user>\n</users>\n`;
+      return new Response(xml, {
+        status: 200,
+        headers: { "content-type": "application/xml; charset=utf-8" },
+      });
+    }
+  }
+
   // 1. AI-agent + SEO endpoints
   if (url.pathname === "/robots.txt")     return handleRobots();
   if (url.pathname === "/sitemap.xml")    return handleSitemap();
@@ -1129,14 +1387,23 @@ async function route(request) {
   return handler.fetch(request);
 }
 
+// Paths that MUST NOT carry X-Robots-Tag: noindex even on staging —
+// webmaster tools verification crawlers and robots.txt itself need to be
+// readable for ownership / policy discovery to work.
+function isNoindexExempt(pathname) {
+  if (pathname === "/robots.txt") return true;
+  if (pathname === "/BingSiteAuth.xml") return true;
+  if (/^\/google[0-9a-f]+\.html$/i.test(pathname)) return true;
+  return false;
+}
+
 const server = serve({
   fetch: async (request) => {
     const response = await route(request);
     // On staging, stamp X-Robots-Tag on every response so search engines
     // keep the whole beta out of their indexes (authoritative over any
-    // page-level meta robots tag). robots.txt is excluded — crawlers must
-    // be able to read it to learn the Disallow rule.
-    if (NOINDEX && response && !new URL(request.url).pathname.endsWith("/robots.txt")) {
+    // page-level meta robots tag). Exempt paths bypass — see isNoindexExempt.
+    if (NOINDEX && response && !isNoindexExempt(new URL(request.url).pathname)) {
       try {
         response.headers.set("x-robots-tag", "noindex, nofollow");
       } catch {
