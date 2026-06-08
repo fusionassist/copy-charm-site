@@ -298,6 +298,12 @@ function resolveRedirect(pathname, search) {
   if (/^\/elementor-6\/?(?:index\.html)?$/i.test(pathname)) {
     return { target: "/", status: 301 };
   }
+  // /interactivedisplays.ie/* — wget-mangled relative path resolved
+  // wrong. Any visitor hitting it (Google, a cached external link)
+  // forwards to /.
+  if (/^\/interactivedisplays\.ie\/?(?:index\.html)?$/i.test(pathname)) {
+    return { target: "/", status: 301 };
+  }
   return null;
 }
 
@@ -456,18 +462,24 @@ function rewriteMirrorHtml(html) {
   // every nav-to-home / logo-click at it (~150 mirror files). The URL is
   // ugly, hurts SEO (duplicate content with /), and is meaningless to
   // anyone outside the WP backend. Fold every such link back to /.
-  // Patterns seen in the wild:
-  //   href="elementor-6/index.html"  (most common, relative)
-  //   href="../elementor-6/index.html"  (subpages going up to root)
-  //   href="../../elementor-6/index.html"
-  //   href="/elementor-6/index.html"  (absolute)
-  //   href="/elementor-6/"
   out = out.replace(
     /href="(?:\.\.\/)*elementor-6\/(?:index\.html)?"/gi,
     'href="/"',
   );
   out = out.replace(
     /href="\/elementor-6\/(?:index\.html)?"/gi,
+    'href="/"',
+  );
+  // 1c. wget mangled some self-domain links on inner pages to point at
+  // a "folder" matching the domain — eg. href="../../../interactivedisplays.ie/index.html".
+  // The browser resolves that to /interactivedisplays.ie/index.html, a
+  // 404. ~146 mirror files affected. Fold all depths back to "/".
+  out = out.replace(
+    /href="(?:\.\.\/)+interactivedisplays\.ie\/(?:index\.html)?"/gi,
+    'href="/"',
+  );
+  out = out.replace(
+    /href="\/interactivedisplays\.ie\/(?:index\.html)?"/gi,
     'href="/"',
   );
   // 2. On staging, neutralise the mirror's inherited "index, follow" robots

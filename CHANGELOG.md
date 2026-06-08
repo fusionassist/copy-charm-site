@@ -8,6 +8,12 @@ Format inspired by [keepachangelog.com](https://keepachangelog.com/en/1.1.0/); n
 
 ## [Unreleased]
 
+### Fixed — 2026-06-08 — /interactivedisplays.ie/index.html URL leak
+
+Same family as the elementor-6 fix: wget mangled self-domain links on inner pages to `href="../../../interactivedisplays.ie/index.html"`. Browser resolves to `https://interactivedisplays.ie/interactivedisplays.ie/index.html` → 404. ~146 mirror files affected, five different `../` depths.
+
+Folded into the existing two-layer pattern: rewriter strips every depth + absolute form, redirect handler 301s any direct hit on `/interactivedisplays.ie/...` to `/`.
+
 ### Fixed — 2026-06-08 — /elementor-6/ URL leak
 
 The legacy WP site stored its homepage as an Elementor template at /elementor-6/index.html. wget preserved internal relative links to that path in ~150 mirror HTML files — clicking the logo or the "Home" nav link on any mirror page navigated the browser to https://interactivedisplays.ie/elementor-6/index.html. Ugly URL, duplicate-content collision with /, and meaningless to anyone outside the WP backend.
