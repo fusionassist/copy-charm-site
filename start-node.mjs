@@ -732,11 +732,20 @@ function rewriteSeoTags(html, requestPath) {
   //    SITE_URL so social platforms (LinkedIn, WhatsApp, Slack, Discord)
   //    can fetch the image for their preview cards. Same for og:image:secure_url
   //    and twitter:image.
+  const baseAbs = SITE_URL.replace(/\/+$/, "");
+  const FALLBACK_OG = `${baseAbs}/brand/og-default.png`;
   const absolutizeImg = (raw) => {
     if (!raw) return raw;
     return raw.replace(
       /content\s*=\s*["']([^"']+)["']/i,
       (_, src) => {
+        // Some legacy WP og:image refs point at files that don't exist
+        // in the mirror (eg. the homepage's interactive-displays-logo.png).
+        // Substitute the branded default image for known-bad WP-uploads
+        // references to the homepage logo.
+        if (/wp-content\/uploads\/2025\/07\/interactive-displays-logo\.png/i.test(src)) {
+          return `content="${FALLBACK_OG}"`;
+        }
         const abs = absolutizeUrl(src);
         return `content="${abs}"`;
       },
@@ -754,6 +763,15 @@ function rewriteSeoTags(html, requestPath) {
     /<meta\s+[^>]*name\s*=\s*["']twitter:image["'][^>]*>/gi,
     (m) => absolutizeImg(m),
   );
+
+  // 6. Normalise www.interactivedisplays.ie references → bare domain. Rank
+  //    Math wrote its JSON-LD with full www. URLs and relative @id refs
+  //    ("@id":"/#organization"). Both need normalising so Google sees one
+  //    consistent canonical entity.
+  out = out.replace(/https:\/\/www\.interactivedisplays\.ie/gi, baseAbs);
+  // Relative @id refs ("@id":"/#organization", "@id":"/foo/#bar") need an
+  // absolute prefix so Schema.org's identity graph resolves correctly.
+  out = out.replace(/"@id":"\/#/g, `"@id":"${baseAbs}/#`);
 
   // 5. Build a Schema.org JSON-LD block for the page type. Injected just
   //    before </head> so it sits with the other meta tags. Uses the existing

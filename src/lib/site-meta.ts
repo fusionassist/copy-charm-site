@@ -12,7 +12,7 @@ export const SITE_META = {
     "Interactive Displays Ireland (IDI) supplies, installs and supports LED and LCD digital signage, interactive touchscreens, outdoor displays, kiosks and LED video walls for retail, hospitality, education, healthcare and corporate clients across Ireland.",
 
   // Web
-  url: "https://beta.interactivedisplays.ie",
+  url: import.meta.env.VITE_PUBLIC_SITE_URL ?? "https://interactivedisplays.ie",
   productionUrl: "https://interactivedisplays.ie",
   logo: "/brand/idi-logo-color.png",
   favicon: "/brand/favicon.png",

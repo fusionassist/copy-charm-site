@@ -20,7 +20,12 @@ export const Route = createFileRoute("/contact-us")({
       },
       { property: "og:type", content: "website" },
     ],
-    links: [{ rel: "canonical", href: "https://beta.interactivedisplays.ie/contact-us" }],
+    links: [
+      {
+        rel: "canonical",
+        href: `${import.meta.env.VITE_PUBLIC_SITE_URL ?? "https://interactivedisplays.ie"}/contact-us`,
+      },
+    ],
   }),
 });
 

@@ -25,7 +25,12 @@ export const Route = createFileRoute("/")({
       },
       { property: "og:type", content: "website" },
     ],
-    links: [{ rel: "canonical", href: "https://beta.interactivedisplays.ie/" }],
+    links: [
+      {
+        rel: "canonical",
+        href: `${import.meta.env.VITE_PUBLIC_SITE_URL ?? "https://interactivedisplays.ie"}/`,
+      },
+    ],
   }),
 });
 

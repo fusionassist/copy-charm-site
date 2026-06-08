@@ -8,6 +8,18 @@ Format inspired by [keepachangelog.com](https://keepachangelog.com/en/1.1.0/); n
 
 ## [Unreleased]
 
+### Fixed — 2026-06-08 — Post-cutover SEO assessment cleanup
+
+Ran a comprehensive external SEO probe immediately after the prod cutover (sitemap reachability, per-page meta, JSON-LD structure, AI-agent endpoints, social previews, performance, legacy URL equity). Three real findings to address:
+
+1. **Hard-coded `https://beta.interactivedisplays.ie` URLs in TanStack source.** The Vite bundle bakes these into the static client at build time, so even after flipping `VITE_PUBLIC_SITE_URL` the deployed client kept the beta URLs. Fixed in 5 places (`src/lib/site-meta.ts`, `src/routes/{__root,index,contact-us}.tsx`) by reading `import.meta.env.VITE_PUBLIC_SITE_URL` at build time with a prod default fallback. Now `bun run build` produces a bundle that takes the env var at build-time, no hard-coded staging URLs.
+
+2. **Homepage og:image points at a 0-byte WP-content file.** Rank Math wrote the legacy og:image as `/wp-content/uploads/2025/07/interactive-displays-logo.png` — wget preserved the meta but the file in the mirror is 0 bytes, so LinkedIn/WhatsApp/Slack previews showed no image. Mirror rewriter now substitutes the branded `/brand/og-default.png` (1200×630 IDI navy card) for that specific URL.
+
+3. **Rank Math JSON-LD used `https://www.interactivedisplays.ie` + relative `@id` refs.** Our preferred canonical is the bare domain. Mirror rewriter now (a) replaces every `https://www.interactivedisplays.ie` with `SITE_URL`, and (b) absolutizes relative `"@id":"/#organization"` refs to `"@id":"${SITE_URL}/#organization"` so Google sees one consistent entity in the Schema.org identity graph.
+
+Per the doc maintenance contract — CHANGELOG.md updated. CLAUDE.md unchanged (no architecture shift).
+
 ### Fixed — 2026-06-08 — /interactivedisplays.ie/index.html URL leak
 
 Same family as the elementor-6 fix: wget mangled self-domain links on inner pages to `href="../../../interactivedisplays.ie/index.html"`. Browser resolves to `https://interactivedisplays.ie/interactivedisplays.ie/index.html` → 404. ~146 mirror files affected, five different `../` depths.
