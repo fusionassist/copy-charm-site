@@ -1041,6 +1041,30 @@ async function handleSitemap() {
 
   const today = new Date().toISOString().split("T")[0];
 
+  // Normalise any date-like value to the W3C date format Google's sitemap
+  // schema accepts (YYYY-MM-DD or full ISO 8601). js-yaml auto-parses
+  // unquoted YAML dates (`updatedAt: 2025-08-22`) to JavaScript Date
+  // objects — without this normalisation they get stringified as
+  // "Fri Aug 22 2025 01:00:00 GMT+0100 (...)", which GSC rejects as
+  // "Invalid date".
+  const isoDate = (val) => {
+    if (!val) return today;
+    if (val instanceof Date) {
+      if (Number.isNaN(val.getTime())) return today;
+      return val.toISOString().split("T")[0];
+    }
+    if (typeof val === "string") {
+      // Already in YYYY-MM-DD or ISO 8601 — accept as-is
+      if (/^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:?\d{2})?)?$/.test(val)) {
+        return val;
+      }
+      // Otherwise try to coerce
+      const d = new Date(val);
+      if (!Number.isNaN(d.getTime())) return d.toISOString().split("T")[0];
+    }
+    return today;
+  };
+
   const entries = [
     ...MIRROR_PAGES.map((path) => ({
       loc: SITE_URL + path,
@@ -1056,19 +1080,19 @@ async function handleSitemap() {
     })),
     ...products.map((p) => ({
       loc: SITE_URL + pathForContent("products", p.slug),
-      lastmod: p.frontmatter.updatedAt ?? p.frontmatter.publishedAt ?? today,
+      lastmod: isoDate(p.frontmatter.updatedAt ?? p.frontmatter.publishedAt),
       changefreq: "monthly",
       priority: "0.7",
     })),
     ...posts.map((p) => ({
       loc: SITE_URL + pathForContent("posts", p.slug),
-      lastmod: p.frontmatter.updatedAt ?? p.frontmatter.publishedAt ?? today,
+      lastmod: isoDate(p.frontmatter.updatedAt ?? p.frontmatter.publishedAt),
       changefreq: "monthly",
       priority: "0.6",
     })),
     ...jobs.map((j) => ({
       loc: SITE_URL + pathForContent("jobs", j.slug),
-      lastmod: j.frontmatter.publishedAt ?? today,
+      lastmod: isoDate(j.frontmatter.publishedAt),
       changefreq: "weekly",
       priority: "0.5",
     })),

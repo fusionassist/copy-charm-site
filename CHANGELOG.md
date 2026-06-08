@@ -8,6 +8,14 @@ Format inspired by [keepachangelog.com](https://keepachangelog.com/en/1.1.0/); n
 
 ## [Unreleased]
 
+### Fixed — 2026-06-08 — Sitemap "Invalid date" errors in GSC
+
+After GSC accepted the sitemap (77 URLs discovered), the validator reported 3 URLs with "Invalid date" lastmod values. Diagnosed: js-yaml auto-parses unquoted YAML dates like `updatedAt: 2025-08-22` to JavaScript Date objects. When concatenated into XML without normalisation, those Date objects stringify as `Fri Aug 22 2025 01:00:00 GMT+0100 (Irish Standard Time)` — not Google's accepted W3C date format.
+
+Added an `isoDate()` helper in the sitemap handler. Accepts Date objects (formats via `toISOString().split("T")[0]`), accepts strings already in YYYY-MM-DD or ISO 8601 format as-is, falls back to today's date for anything else. Applied to all 3 MDX-sourced lastmod lookups (products, posts, jobs).
+
+Verified: every lastmod in `/sitemap.xml` now matches `^\d{4}-\d{2}-\d{2}$`. GSC's "Sitemap can be read, but has errors" should clear on next read.
+
 ### Fixed — 2026-06-08 — Legacy Rank Math sitemap URLs 404'd in GSC
 
 Google Search Console's existing sitemap submission for `interactivedisplays.ie` pointed at `/sitemap_index.xml` — Rank Math's multi-file sitemap index from the legacy WP site. wget never captured those dynamic files, so GSC was hitting 404s and showing "Couldn't fetch".
