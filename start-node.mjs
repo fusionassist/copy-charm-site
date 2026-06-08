@@ -11,6 +11,18 @@
 // PORT, HOST, and all M365_* env vars are loaded from .env.local via
 // Node's --env-file-if-exists flag (set in ~/bin/beta-node-supervisor.sh).
 
+// Process-level error handlers — drive-by scanners, malformed URIs, and
+// other unexpected exceptions should not bring the whole site down. Log
+// loudly so we still see them in the supervisor's app.log, but don't
+// terminate the process. The supervisor's last-line-of-defense (cron
+// every minute) catches genuine crashes; this catches the noise.
+process.on("uncaughtException", (err) => {
+  console.error("[uncaughtException]", err);
+});
+process.on("unhandledRejection", (reason) => {
+  console.error("[unhandledRejection]", reason);
+});
+
 import { serve } from "srvx/node";
 import { stat, readFile, readdir } from "node:fs/promises";
 import { extname, join, resolve } from "node:path";
@@ -486,11 +498,24 @@ function rewriteSeoTags(html, requestPath) {
   return out;
 }
 
+// Decode a URL path safely. Malformed %-encoding (eg. /%FF from drive-by
+// scanners and fuzzers) throws URIError; we swallow and return null so
+// the request lands in 404-fallthrough instead of crashing the process.
+function safeDecodePath(pathname) {
+  try {
+    return decodeURIComponent(pathname);
+  } catch {
+    return null;
+  }
+}
+
 async function tryServeMirror(request) {
   if (request.method !== "GET" && request.method !== "HEAD") return null;
   const url = new URL(request.url);
   if (isMirrorExcluded(url.pathname)) return null;
-  const file = await resolveMirrorFile(decodeURIComponent(url.pathname), url.search.slice(1));
+  const decoded = safeDecodePath(url.pathname);
+  if (decoded === null) return null;
+  const file = await resolveMirrorFile(decoded, url.search.slice(1));
   if (!file) return null;
   const ext = extname(file).toLowerCase();
   const contentType = CONTENT_TYPES[ext] ?? "application/octet-stream";
