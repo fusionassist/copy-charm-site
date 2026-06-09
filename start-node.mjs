@@ -531,24 +531,35 @@ const TAWK_PATTERNS = [
 //   GT-M3LVT37 (gtag.js)
 //   GTM-NS2W7ML (Google Tag Manager)
 //   1422006029068970 (Facebook Pixel)
-// These could be firing to old / unknown analytics accounts every time
-// someone visits a mirror page. Strip them so the only trackers active
-// are the ones explicitly configured via VITE_PUBLIC_* env vars.
+//
+// CRITICAL LESSON: every pattern here MUST be "<script>...<\/script>"
+// non-greedy on `[^<]` (or equivalent), NOT `[\s\S]*?`. The lazy
+// quantifier with `[\s\S]` happily eats hundreds of lines of HTML
+// (stylesheets, real scripts, everything between the FIRST `<script>` in
+// the document and the closing `</script>` of the legacy block) — which
+// is exactly what happened on 2026-06-08 and stripped every stylesheet
+// from every mirror page.
+//
+// The current patterns key on the SCRIPT'S src or contents only, with a
+// negative-character class so the match can't cross into another tag.
 const LEGACY_TRACKING_PATTERNS = [
-  // gtag.js loader scripts (any ID)
-  /<script[^>]*src=["'][^"']*googletagmanager\.com\/gtag\/js[^"']*["'][^>]*><\/script>/gi,
-  // GTM container loader scripts
-  /<script[^>]*src=["'][^"']*googletagmanager\.com\/gtm\.js[^"']*["'][^>]*><\/script>/gi,
-  // GTM noscript iframes
-  /<noscript[^>]*>[\s\S]*?googletagmanager\.com\/ns\.html[\s\S]*?<\/noscript>/gi,
-  // Inline gtag('config', ...) blocks
-  /<script[^>]*>[\s\S]*?gtag\s*\(\s*['"]config['"][\s\S]*?<\/script>/gi,
-  // Facebook Pixel loader + fbq('init', ...)
-  /<script[^>]*>[\s\S]*?fbq\s*\(\s*['"]init['"][\s\S]*?<\/script>/gi,
-  // Facebook Pixel noscript fallback
-  /<noscript[^>]*>[\s\S]*?facebook\.com\/tr\?id=[\s\S]*?<\/noscript>/gi,
-  // Connect.facebook.net loader fragments left inline
-  /<script[^>]*src=["'][^"']*connect\.facebook\.net[^"']*["'][^>]*><\/script>/gi,
+  // gtag.js loader scripts (any ID). Script with src="...gtag/js..." and no body.
+  /<script\b[^>]*src=["'][^"']*googletagmanager\.com\/gtag\/js[^"']*["'][^>]*>\s*<\/script>/gi,
+  // GTM container loader scripts. Script with src="...gtm.js...".
+  /<script\b[^>]*src=["'][^"']*googletagmanager\.com\/gtm\.js[^"']*["'][^>]*>\s*<\/script>/gi,
+  // GTM noscript iframes. Anchored on noscript and the specific ns.html URL.
+  /<noscript\b[^>]*>\s*<iframe\b[^>]*googletagmanager\.com\/ns\.html[^>]*>[^<]*<\/iframe>\s*<\/noscript>/gi,
+  // Inline gtag('config', ...) script. Body MUST contain gtag('config'
+  // AND the body must NOT contain another opening <script — capped by
+  // matching only [^<]* between markers + a lookahead that confirms gtag.
+  // Matches inline scripts whose body starts with the gtag bootstrap.
+  /<script\b[^>]*>[^<]*\bgtag\s*\(\s*['"]config['"][^<]*<\/script>/gi,
+  // Inline fbq('init', ...) script. Same constraint.
+  /<script\b[^>]*>[^<]*\bfbq\s*\(\s*['"]init['"][^<]*<\/script>/gi,
+  // Facebook Pixel noscript fallback (very specific URL).
+  /<noscript\b[^>]*>\s*<img\b[^>]*facebook\.com\/tr\?id=[^>]*>\s*<\/noscript>/gi,
+  // connect.facebook.net loader fragments left inline (no body)
+  /<script\b[^>]*src=["'][^"']*connect\.facebook\.net[^"']*["'][^>]*>\s*<\/script>/gi,
 ];
 
 function rewriteMirrorHtml(html) {
