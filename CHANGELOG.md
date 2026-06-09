@@ -8,6 +8,22 @@ Format inspired by [keepachangelog.com](https://keepachangelog.com/en/1.1.0/); n
 
 ## [Unreleased]
 
+### Added — 2026-06-09 — /terms TanStack route
+
+Generic Ireland-law-governed Terms of Service at `/terms`. 12 sections: about us, website scope (B2B brochure-site, no e-commerce), acceptable use, quotes & contracts (quotes are invitation to treat, not binding offers), IP, availability & changes, disclaimers, limitation of liability (€100 cap on website-only direct loss; consequential loss excluded; nothing limits liability for fraud or PI from negligence), indemnity, governing law (Ireland), severability, contact.
+
+Notable choices:
+- Liability cap is website-only — explicitly carves out "separate signed sales contracts" so the website Terms don't accidentally cap commercial AV installation contract liability.
+- Quotes are described as "invitation to treat" so the website itself never creates a binding offer; commercial relationships need a signed order confirmation.
+- Names IDI's house brand (Moytronix) and third-party brand marks (Promethean, Vestel) accurately.
+- Closing disclaimer notes this is general transparency, not legal advice — and explicitly recommends qualified counsel for project-specific contract terms.
+
+Plumbing matches the privacy policy:
+- `/terms` + trailing-slash variant in MIRROR_EXCLUDE
+- Added to sitemap STATIC_PAGES at priority 0.3
+- Footer link added next to Privacy policy via TanStack `<Link>`
+
+
 ### Added — 2026-06-09 — /privacy-policy TanStack route
 
 Generic but project-specific privacy policy at `/privacy-policy` covering: who we are, data we collect (contact form / live chat / phone / email / analytics), legal bases, cookies (strictly-necessary / functional / analytics), sharing (Microsoft, Plesk, Cloudflare, Google/Meta/LinkedIn when tracking is active, Odoo CRM), retention periods, GDPR rights, security, children, change handling, contact.

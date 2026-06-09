@@ -122,6 +122,11 @@ export function Footer() {
                 Privacy policy
               </Link>
             </li>
+            <li>
+              <Link className="hover:text-white" to="/terms">
+                Terms of service
+              </Link>
+            </li>
           </ul>
         </div>
       </div>

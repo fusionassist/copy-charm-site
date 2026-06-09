@@ -100,6 +100,7 @@ const STATIC_PAGES = [
   { path: "/", title: "Home", description: ORG.tagline, priority: "1.0", changefreq: "weekly" },
   { path: "/contact-us", title: "Contact us", description: "Sales enquiries, contact form, office details.", priority: "0.9", changefreq: "monthly" },
   { path: "/privacy-policy", title: "Privacy policy", description: "How we collect, use, and protect personal data.", priority: "0.3", changefreq: "yearly" },
+  { path: "/terms", title: "Terms of service", description: "Terms governing use of the IDI website and online services.", priority: "0.3", changefreq: "yearly" },
 ];
 
 // Canonical URL targets known to the site from the wp-mirror — every URL
@@ -330,6 +331,8 @@ const MIRROR_EXCLUDE = new Set([
   "/contact-us/",
   "/privacy-policy",
   "/privacy-policy/",
+  "/terms",
+  "/terms/",
   "/llms.txt",
   "/llms-full.txt",
   "/robots.txt",
