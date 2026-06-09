@@ -8,6 +8,19 @@ Format inspired by [keepachangelog.com](https://keepachangelog.com/en/1.1.0/); n
 
 ## [Unreleased]
 
+### Added — 2026-06-09 — /privacy-policy TanStack route
+
+Generic but project-specific privacy policy at `/privacy-policy` covering: who we are, data we collect (contact form / live chat / phone / email / analytics), legal bases, cookies (strictly-necessary / functional / analytics), sharing (Microsoft, Plesk, Cloudflare, Google/Meta/LinkedIn when tracking is active, Odoo CRM), retention periods, GDPR rights, security, children, change handling, contact.
+
+Pulls org details (legal name, address, email, phone) from `src/lib/site-meta.ts` so updates propagate automatically. Includes a note at the end that this is general transparency, not legal advice.
+
+Plumbing:
+- Added `/privacy-policy` and `/privacy-policy/` to MIRROR_EXCLUDE so TanStack serves it rather than the legacy WP mirror.
+- Added to STATIC_PAGES in sitemap.xml at priority 0.3 (legal pages are low priority for crawlers).
+- Footer link converted from `<a href="/privacy-policy/">` to TanStack `<Link to="/privacy-policy">` for client-side navigation. Removed the dead "Cookie policy" link (cookie disclosures live inside the privacy policy itself).
+
+
+
 ### Fixed — 2026-06-09 — URGENT regex catastrophe: tracking strip ate stylesheets
 
 The LEGACY_TRACKING_PATTERNS added the day before used lazy `[\s\S]*?` quantifiers that crossed HTML tag boundaries. The "inline gtag config" and "fbq init" patterns each matched from the FIRST `<script>` tag in the document, through ~25 KB of HTML (47 of 48 stylesheets, image preloads, real scripts), to the closing `</script>` of the legacy tracking block far below.

@@ -118,14 +118,9 @@ export function Footer() {
           <p>© {year} Interactive Displays Ireland. All rights reserved.</p>
           <ul className="flex items-center gap-6">
             <li>
-              <a className="hover:text-white" href="/privacy-policy/">
+              <Link className="hover:text-white" to="/privacy-policy">
                 Privacy policy
-              </a>
-            </li>
-            <li>
-              <a className="hover:text-white" href="/cookie-policy/">
-                Cookie policy
-              </a>
+              </Link>
             </li>
           </ul>
         </div>
