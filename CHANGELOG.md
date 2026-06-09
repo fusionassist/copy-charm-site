@@ -8,6 +8,21 @@ Format inspired by [keepachangelog.com](https://keepachangelog.com/en/1.1.0/); n
 
 ## [Unreleased]
 
+### Fixed — 2026-06-09 — URGENT regex catastrophe: tracking strip ate stylesheets
+
+The LEGACY_TRACKING_PATTERNS added the day before used lazy `[\s\S]*?` quantifiers that crossed HTML tag boundaries. The "inline gtag config" and "fbq init" patterns each matched from the FIRST `<script>` tag in the document, through ~25 KB of HTML (47 of 48 stylesheets, image preloads, real scripts), to the closing `</script>` of the legacy tracking block far below.
+
+Result: every mirror page served with all CSS stripped. Images rendered at native pixel sizes (some 2048px wide). Reported by Gerry as "all the images are massive" on 2026-06-09.
+
+Fixed by replacing `[\s\S]*?` with `[^<]*` in the inline-script patterns. `[^<]` cannot match `<` characters, so the regex physically cannot cross into another HTML tag — only matches scripts whose body is exclusively the tracking init.
+
+Local verification on raw mirror HTML showed:
+- Before fix: 291,128 bytes / 48 stylesheets
+- After fix: 289,060 bytes / 48 stylesheets  (only ~2 KB tracking removed)
+- All three legacy tracking IDs (GT-M3LVT37, Facebook Pixel 1422006029068970, GTM-NS2W7ML script tags) still correctly stripped
+
+Future-proofing: added an explicit warning comment block above the patterns explaining the trap.
+
 ### Fixed — 2026-06-08 — Strip legacy WP tracking baked into mirror
 
 When verifying the pre-wired tracking infrastructure didn't leak, discovered the wp-mirror HTML had **legacy gtag.js + GTM + Meta Pixel scripts hard-coded** from the previous WP install:
