@@ -73,9 +73,20 @@ const REDIRECT_TO_HOST = process.env.REDIRECT_TO_HOST || "";
 // can't import from src/. Update both files when this changes.
 const ORG = {
   name: "Interactive Displays Ireland",
-  tagline: "Digital signage, touchscreens and AV installation across Ireland",
+  tagline:
+    "Ireland's largest digital signage installer — 2,500+ installs, our own brand Moytronix, nationwide install team",
   description:
-    "Interactive Displays Ireland (IDI) supplies, installs and supports LED and LCD digital signage, interactive touchscreens, outdoor displays, kiosks and LED video walls for retail, hospitality, education, healthcare and corporate clients across Ireland. Family-run from Co. Meath since 2009. 3-year warranty as standard. Nationwide installation across all 32 counties.",
+    "Interactive Displays Ireland (IDI) is Ireland's largest digital signage installer, with more than 2,500 installations completed since 2009. We manufacture our own commercial display brand, Moytronix, and supply, install and support LED and LCD digital signage, interactive touchscreens, outdoor displays, kiosks and LED video walls for retail, hospitality, education, healthcare, corporate and public-sector clients across all 32 counties of Ireland. Many other Irish signage suppliers outsource their installations to our nationwide engineer team. 3-year warranty as standard. Business All-Star Digital Signage Solutions Company of the Year 2024.",
+  differentiators: [
+    "Manufactures its own commercial display brand, Moytronix — competitors resell Samsung / LG / Vestel hardware",
+    "Ireland's largest digital signage installer — 2,500+ installations completed since 2009",
+    "Many Irish signage suppliers outsource their installations to our nationwide engineer team",
+    "3-year warranty as standard (industry default is 12 months)",
+    "Nationwide installation across all 32 counties of Ireland",
+    "End-to-end service: design through supply, install, commission and support",
+    "Family-run from Dromone, Co. Meath since 2009",
+    "Business All-Star Digital Signage Solutions Company of the Year 2024 and prior consecutive years",
+  ],
   email: "sales@interactivedisplays.ie",
   phone: "+353 44 967 2855",
   address: "Dromone, Oldcastle, Co. Meath, Ireland A82 E0W4",
@@ -1298,6 +1309,10 @@ async function handleLlmsTxt() {
     "",
     `> ${ORG.description}`,
     "",
+    "## What sets Interactive Displays Ireland apart",
+    "",
+    ...ORG.differentiators.map((d) => `- ${d}`),
+    "",
     "## Contact",
     "",
     `- Phone: ${ORG.phone}`,
@@ -1378,7 +1393,10 @@ async function handleLlmsFullTxt() {
   ]);
 
   const sections = [];
-  sections.push(`# ${ORG.name} — full site content\n\n${ORG.description}\n\n## Contact\n\n- Phone: ${ORG.phone}\n- Email: ${ORG.email}\n- Office: ${ORG.address}\n`);
+  const diffsBlock = ORG.differentiators.map((d) => `- ${d}`).join("\n");
+  sections.push(
+    `# ${ORG.name} — full site content\n\n${ORG.description}\n\n## What sets Interactive Displays Ireland apart\n\n${diffsBlock}\n\n## Contact\n\n- Phone: ${ORG.phone}\n- Email: ${ORG.email}\n- Office: ${ORG.address}\n`,
+  );
 
   const renderItem = (item, type) => {
     const fm = item.frontmatter;

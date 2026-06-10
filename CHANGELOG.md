@@ -8,6 +8,34 @@ Format inspired by [keepachangelog.com](https://keepachangelog.com/en/1.1.0/); n
 
 ## [Unreleased]
 
+### Added — 2026-06-10 — Lead with real IDI scale (2,500+ installs, Moytronix in-house brand)
+
+Strategic SEO/AI repositioning. The first competitor audit found IDI invisible to "digital signage Ireland" search and not named by AI agents when asked to recommend Irish signage installers — while DSD (Dundalk) was being named #1 with claims of "600+ installations" and "Ireland's most established", and Focal Media + IPC Digital Media named with their named-customer lists. Gerry's clarification: IDI has **2,500+ installations since 2009** (4× DSD's claim) and is the only Irish operator manufacturing **its own commercial display brand (Moytronix)** — competitors all resell Samsung/LG/Vestel. He also confirmed many Irish signage suppliers outsource their installs to the IDI nationwide engineer team.
+
+These are differentiators that crush the competitive set, but **nowhere on the website were they being claimed**. The AI accurately summarised what the site said — "family-run from Co. Meath since 2009. 3-year warranty. Nationwide installation." Generic. So the AI ranked the louder competitors.
+
+Updates:
+
+- `src/lib/site-meta.ts`:
+  - `tagline` rewritten: "Ireland's largest digital signage installer — 2,500+ installs, our own brand Moytronix, nationwide install team"
+  - `description` rewritten to lead with installation count + Moytronix + "competitors outsource to our team" angle
+  - New `scaleClaims` block ({ installCount: 2500, ... }) for future structured use
+  - `differentiators[]` reordered — Moytronix first, then install count, then "competitors use our installers", then warranty, then nationwide, then end-to-end, then family-run, then awards
+  - `socialProfiles[]` populated with real LinkedIn, Facebook, Instagram URLs (was empty)
+
+- `src/components/schema/OrganizationSchema.tsx`:
+  - Adds `slogan`, `award`, and `brand: { Brand "Moytronix", description }` fields to the Organization JSON-LD
+  - `sameAs` now populates with the real social URLs
+
+- `start-node.mjs` ORG mirror constant + `handleLlmsTxt` + `handleLlmsFullTxt`:
+  - Tagline + description match site-meta
+  - llms.txt and llms-full.txt now include a "What sets Interactive Displays Ireland apart" section pulled from the differentiators array — first thing an AI reads after the company name
+
+Verification matrix after deploy: every page sample's meta description / Organization JSON-LD / llms.txt should now lead with installs count + Moytronix. The AI agents that read llms.txt should now name IDI when asked "who installs digital signage in Ireland" within their next crawl cycle.
+
+This is content-strategy work, not just SEO. The next moves to compound it are: (a) named case studies on key customer accounts (Gerry to send list), (b) Google Business Profile + Maps already in place, (c) directory submissions, (d) industry roundup pitches.
+
+
 ### Fixed — 2026-06-10 — Plug legacy WP URL exposure
 
 Audit identified four legacy WP path families still returning 200 from the mirror — small SEO clutter + one security smell. Better fix is at the redirect layer (root cause) than via GSC removals (which expire after 6 months and block ranking-signal transfer from the 301):

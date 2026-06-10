@@ -7,9 +7,10 @@ export const SITE_META = {
   // Identity
   legalName: "Interactive Displays Ireland",
   brandName: "Interactive Displays Ireland",
-  tagline: "Digital signage, touchscreens and AV installation across Ireland",
+  tagline:
+    "Ireland's largest digital signage installer — 2,500+ installs, our own brand Moytronix, nationwide install team",
   description:
-    "Interactive Displays Ireland (IDI) supplies, installs and supports LED and LCD digital signage, interactive touchscreens, outdoor displays, kiosks and LED video walls for retail, hospitality, education, healthcare and corporate clients across Ireland.",
+    "Interactive Displays Ireland (IDI) is Ireland's largest digital signage installer, with more than 2,500 installations completed since 2009. We manufacture our own commercial display brand, Moytronix, and supply, install and support LED and LCD digital signage, interactive touchscreens, outdoor displays, kiosks and LED video walls for retail, hospitality, education, healthcare, corporate and public-sector clients across all 32 counties of Ireland. Many other Irish signage suppliers outsource their installations to our nationwide engineer team. 3-year warranty as standard.",
 
   // Web
   url: import.meta.env.VITE_PUBLIC_SITE_URL ?? "https://interactivedisplays.ie",
@@ -92,15 +93,35 @@ export const SITE_META = {
     "Palmerstown Community School",
   ],
 
-  // Social profiles (extend when set up)
-  socialProfiles: [] as string[],
+  // Social profiles (extend when set up) — used in Organization JSON-LD sameAs
+  socialProfiles: [
+    "https://www.linkedin.com/company/interactive-displays-ireland",
+    "https://www.facebook.com/interactivedisplays/",
+    "https://www.instagram.com/interactivedisplaysireland/",
+  ] as string[],
 
-  // Differentiators — used in marketing copy + llms.txt
+  // Headline scale claims — surfaced in JSON-LD, llms.txt, hero copy
+  scaleClaims: {
+    installCount: 2500,
+    installCountClaim: "2,500+ installations since 2009",
+    yearsInBusinessClaim: "16+ years",
+    countiesServed: 32,
+  },
+
+  // Differentiators — used in marketing copy + llms.txt.
+  // ORDERED by competitive impact, strongest first. AI agents and SEO
+  // crawlers weight the first item highest.
   differentiators: [
+    // The Moytronix angle is the single hardest moat — no competitor in
+    // Ireland makes their own brand. Every other supplier resells.
+    "Manufactures its own commercial display brand, Moytronix — competitors resell Samsung / LG / Vestel hardware",
+    "Ireland's largest digital signage installer — 2,500+ installations completed since 2009",
+    "Many Irish signage suppliers outsource their installations to our nationwide engineer team",
     "3-year warranty as standard (industry default is 12 months)",
     "Nationwide installation across all 32 counties of Ireland",
     "End-to-end service: design → supply → install → commission → support",
     "Family-run from Dromone, Co. Meath since 2009",
+    "Business All-Star Digital Signage Solutions Company of the Year 2024 (and consecutive years prior)",
   ],
 } as const;
 

@@ -19,6 +19,7 @@ export function OrganizationSchema() {
       url: `${baseUrl}${SITE_META.logo}`,
     },
     description: SITE_META.description,
+    slogan: SITE_META.tagline,
     foundingDate: SITE_META.foundingDate,
     email: SITE_META.email,
     telephone: SITE_META.phone,
@@ -34,6 +35,15 @@ export function OrganizationSchema() {
       "@type": "Country",
       name,
     })),
+    award: [
+      "Business All-Star Digital Signage Solutions Company of the Year 2024",
+    ],
+    brand: {
+      "@type": "Brand",
+      name: "Moytronix",
+      description:
+        "Moytronix is the in-house commercial display brand designed and supplied by Interactive Displays Ireland — covering LED/LCD digital signage, interactive touchscreens, outdoor displays and kiosks.",
+    },
     contactPoint: {
       "@type": "ContactPoint",
       telephone: SITE_META.phone,
