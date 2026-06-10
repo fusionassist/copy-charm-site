@@ -8,6 +8,18 @@ Format inspired by [keepachangelog.com](https://keepachangelog.com/en/1.1.0/); n
 
 ## [Unreleased]
 
+### Fixed — 2026-06-10 — Plug legacy WP URL exposure
+
+Audit identified four legacy WP path families still returning 200 from the mirror — small SEO clutter + one security smell. Better fix is at the redirect layer (root cause) than via GSC removals (which expire after 6 months and block ranking-signal transfer from the 301):
+
+- `/author/<username>/` → 301 to `/`. The mirror still exposes `/author/michael_admin/` and `/author/michael_admin_new/` with HTTP 200. These leak admin usernames (attackers use this to know which login to brute-force) AND index useless WP author archive pages. The 301 hides the username AND tells Google to drop the archive page from its index.
+- `/wp-json` and `/wp-json/*` → 301 to `/`. The wget mirror serves a static HTML "WP REST API discovery" page at `/wp-json/`. Useless. Real endpoints under `/wp-json/wp/v2/*` correctly return 404, so they were never a problem; only the root needed cleaning.
+- `/feed/` and `/comments/feed/` → 301 to `/`. Defunct WP RSS endpoints. No active subscribers, mirror snapshots are stale.
+- `/?s=<query>` → 301 to `/`. The WP search results page on the mirror's homepage URL. No search index on the new site so the URL is useless; also a parameter-spam abuse vector.
+
+Verified after deploy: all four paths now 301 cleanly to `/`. Real WP attack-surface paths (`/wp-login.php`, `/xmlrpc.php`, `/wp-admin/index.php`, `/wp-config.php`) all return appropriate 4xx codes already.
+
+
 ### Added — 2026-06-09 — /terms TanStack route
 
 Generic Ireland-law-governed Terms of Service at `/terms`. 12 sections: about us, website scope (B2B brochure-site, no e-commerce), acceptable use, quotes & contracts (quotes are invitation to treat, not binding offers), IP, availability & changes, disclaimers, limitation of liability (€100 cap on website-only direct loss; consequential loss excluded; nothing limits liability for fraud or PI from negligence), indemnity, governing law (Ireland), severability, contact.

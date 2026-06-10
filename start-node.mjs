@@ -317,6 +317,33 @@ function resolveRedirect(pathname, search) {
   ) {
     return { target: "/sitemap.xml", status: 301 };
   }
+  // /author/<username> — WP author archives. The mirror exposes
+  // michael_admin and michael_admin_new which leaks admin usernames
+  // (security smell) and indexes useless author pages. 301 all author
+  // archive URLs to /.
+  if (/^\/author(\/|$)/i.test(pathname)) {
+    return { target: "/", status: 301 };
+  }
+  // /wp-json* — WordPress REST API root. The mirror serves a static HTML
+  // discovery page that's useless and clutters the index. Real endpoints
+  // (/wp-json/wp/v2/*) correctly return 404. 301 the root + any
+  // sub-paths to /.
+  if (/^\/wp-json(\/|$)/i.test(pathname)) {
+    return { target: "/", status: 301 };
+  }
+  // /feed and /comments/feed — defunct WP RSS endpoints. No one
+  // subscribes to them; the mirror serves stale snapshots.
+  if (/^\/(feed|comments\/feed)\/?$/i.test(pathname)) {
+    return { target: "/", status: 301 };
+  }
+  // /?s=<query> — WP search results page. Useless on the new site
+  // (no search index), abuse vector for parameter spam.
+  if (pathname === "/" && search) {
+    const params = new URLSearchParams(search);
+    if (params.has("s")) {
+      return { target: "/", status: 301 };
+    }
+  }
   return null;
 }
 
