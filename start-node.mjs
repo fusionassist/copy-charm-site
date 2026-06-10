@@ -112,6 +112,8 @@ const STATIC_PAGES = [
   { path: "/contact-us", title: "Contact us", description: "Sales enquiries, contact form, office details.", priority: "0.9", changefreq: "monthly" },
   { path: "/privacy-policy", title: "Privacy policy", description: "How we collect, use, and protect personal data.", priority: "0.3", changefreq: "yearly" },
   { path: "/terms", title: "Terms of service", description: "Terms governing use of the IDI website and online services.", priority: "0.3", changefreq: "yearly" },
+  // Sector intent pages — high commercial value for AI/SEO
+  { path: "/digital-signage-for-schools", title: "Digital signage for schools Ireland", description: "School-focused digital signage and interactive whiteboards across Ireland.", priority: "0.9", changefreq: "monthly" },
 ];
 
 // Canonical URL targets known to the site from the wp-mirror — every URL
@@ -311,6 +313,21 @@ function resolveRedirect(pathname, search) {
   if (/^\/elementor-6\/?(?:index\.html)?$/i.test(pathname)) {
     return { target: "/", status: 301 };
   }
+  // Sector intent pages — 301 from any old WP-style URL ("digital-
+  // signage-for-X-ireland" or "/services/digital-signage-X") to the
+  // new canonical /digital-signage-for-<sector> page. Preserves any
+  // SEO equity Google has accumulated against the legacy URLs.
+  const sectorRedirects = {
+    "/digital-signage-for-schools-ireland":   "/digital-signage-for-schools",
+    "/digital-signage-for-schools-ireland/":  "/digital-signage-for-schools",
+    "/digital-signage-schools-ireland":       "/digital-signage-for-schools",
+    "/digital-signage-schools-ireland/":      "/digital-signage-for-schools",
+    "/services/digital-signage-schools":      "/digital-signage-for-schools",
+    "/services/digital-signage-schools/":     "/digital-signage-for-schools",
+  };
+  if (sectorRedirects[pathname]) {
+    return { target: sectorRedirects[pathname], status: 301 };
+  }
   // /interactivedisplays.ie/* — wget-mangled relative path resolved
   // wrong. Any visitor hitting it (Google, a cached external link)
   // forwards to /.
@@ -371,6 +388,11 @@ const MIRROR_EXCLUDE = new Set([
   "/privacy-policy/",
   "/terms",
   "/terms/",
+  // Sector intent pages — replace generic wp-mirror content with
+  // AI-citable TanStack pages designed to win "digital signage for
+  // <sector> Ireland" queries.
+  "/digital-signage-for-schools",
+  "/digital-signage-for-schools/",
   "/llms.txt",
   "/llms-full.txt",
   "/robots.txt",
