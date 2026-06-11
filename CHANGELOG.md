@@ -8,6 +8,23 @@ Format inspired by [keepachangelog.com](https://keepachangelog.com/en/1.1.0/); n
 
 ## [Unreleased]
 
+### Fixed — 2026-06-11 — Careers CV form 404 (legacy Elementor admin-ajax bridge)
+
+The five mirror-served careers pages carry an Elementor Pro "Careers Form" (name / email / phone / job / CV upload / message). Elementor's bundled JS posts it as multipart FormData to `/wp-admin/admin-ajax.php` with `action=elementor_pro_forms_send_form` — a WordPress endpoint that ceased to exist at cutover, so every CV submission died with a 404 and applicants saw Elementor's error state.
+
+Fix in `start-node.mjs`: a new `handleAdminAjax()` intercepts `POST /wp-admin/admin-ajax.php` (wired in routing section 3) and bridges the submission to the existing M365 Graph email plumbing:
+
+- Parses the exact Elementor payload (`form_fields[*]` strings + file uploads, `referer_title`, `queried_id`, `referrer`) via `request.formData()`.
+- Replies with the JSON shape Elementor's form JS renders — `{ success, data: { message, errors: { <fieldId>: msg }, data: {} } }` — always HTTP 200, because Elementor only displays messages from jQuery's success callback (non-2xx is silently swallowed).
+- Server-side validation mirrors the form: name + valid email required, upload capped at 10 MB (same as the form's `data-maxsize="10"`), per-field inline error messages.
+- Honeypot (`field_1b0a3f6`, the hidden Elementor anti-spam field): non-empty → fake success, nothing sent.
+- Email goes to `CAREERS_RECIPIENT` (new optional env var) falling back to `LEAD_RECIPIENT` → `M365_SENDER`, with Reply-To set to the applicant and the CV attached. Subject: `New CV application: <name> — <job page title>`.
+- Attachments ≤ ~2.5 MB raw go inline base64 on `/sendMail` (Graph caps that request at 4 MB); larger files use a new `sendMailLargeAttachments()` draft + `createUploadSession` + 3 MB-chunk flow, so the full 10 MB the form permits actually delivers.
+- Other legacy WP ajax actions (WooCommerce order-attribution beacons etc.) get a quiet 400.
+
+Verified locally: field-validation errors render inline, honeypot drops silently, valid multipart submission with a PDF parses and reaches the Graph send, mirror page serving unaffected.
+
+
 ### Added — 2026-06-10 — Lead with real IDI scale (2,500+ installs, Moytronix in-house brand)
 
 Strategic SEO/AI repositioning. The first competitor audit found IDI invisible to "digital signage Ireland" search and not named by AI agents when asked to recommend Irish signage installers — while DSD (Dundalk) was being named #1 with claims of "600+ installations" and "Ireland's most established", and Focal Media + IPC Digital Media named with their named-customer lists. Gerry's clarification: IDI has **2,500+ installations since 2009** (4× DSD's claim) and is the only Irish operator manufacturing **its own commercial display brand (Moytronix)** — competitors all resell Samsung/LG/Vestel. He also confirmed many Irish signage suppliers outsource their installs to the IDI nationwide engineer team.

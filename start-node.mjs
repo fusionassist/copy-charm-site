@@ -1070,7 +1070,7 @@ async function getGraphToken() {
   return _cachedToken.token;
 }
 
-async function sendMail({ subject, text, html, to, replyTo }) {
+async function sendMail({ subject, text, html, to, replyTo, attachments }) {
   requireEnv("M365_SENDER");
   const sender = process.env.M365_SENDER;
   const recipient = to ?? process.env.LEAD_RECIPIENT ?? sender;
@@ -1086,6 +1086,16 @@ async function sendMail({ subject, text, html, to, replyTo }) {
   if (replyTo) {
     message.replyTo = [{ emailAddress: { address: replyTo } }];
   }
+  if (attachments?.length) {
+    // Inline base64 attachments. Graph caps the whole /sendMail request at
+    // ~4 MB — callers with bigger payloads must use sendMailLargeAttachments.
+    message.attachments = attachments.map((a) => ({
+      "@odata.type": "#microsoft.graph.fileAttachment",
+      name: a.name,
+      contentType: a.contentType || "application/octet-stream",
+      contentBytes: a.contentBytes,
+    }));
+  }
   const payload = { message, saveToSentItems: true };
   const url = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(sender)}/sendMail`;
   const res = await fetch(url, {
@@ -1098,6 +1108,78 @@ async function sendMail({ subject, text, html, to, replyTo }) {
   });
   if (!res.ok) {
     throw new Error(`Graph sendMail failed: ${res.status} ${await res.text()}`);
+  }
+  return { ok: true, status: res.status, sender, recipient };
+}
+
+// Send a message whose attachments are too large for the single-shot
+// /sendMail call (Graph caps that request at ~4 MB total, and base64
+// inflates payloads by a third). Flow: create a draft message, push each
+// attachment through an upload session in 3 MB chunks, send the draft.
+// Graph allows up to 150 MB per attachment this way — our callers cap at
+// the careers form's 10 MB client-side limit long before that.
+async function sendMailLargeAttachments({ subject, text, html, to, replyTo, files }) {
+  requireEnv("M365_SENDER");
+  const sender = process.env.M365_SENDER;
+  const recipient = to ?? process.env.LEAD_RECIPIENT ?? sender;
+  const token = await getGraphToken();
+  const base = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(sender)}`;
+  const jsonHeaders = {
+    authorization: `Bearer ${token}`,
+    "content-type": "application/json",
+  };
+
+  const message = {
+    subject,
+    body: { contentType: html ? "HTML" : "Text", content: html ?? text ?? "" },
+    toRecipients: [{ emailAddress: { address: recipient } }],
+    ...(replyTo ? { replyTo: [{ emailAddress: { address: replyTo } }] } : {}),
+  };
+  let res = await fetch(`${base}/messages`, {
+    method: "POST",
+    headers: jsonHeaders,
+    body: JSON.stringify(message),
+  });
+  if (!res.ok) {
+    throw new Error(`Graph draft create failed: ${res.status} ${await res.text()}`);
+  }
+  const draft = await res.json();
+
+  for (const f of files) {
+    res = await fetch(`${base}/messages/${draft.id}/attachments/createUploadSession`, {
+      method: "POST",
+      headers: jsonHeaders,
+      body: JSON.stringify({
+        AttachmentItem: { attachmentType: "file", name: f.name, size: f.bytes.length },
+      }),
+    });
+    if (!res.ok) {
+      throw new Error(`Graph upload session failed: ${res.status} ${await res.text()}`);
+    }
+    const session = await res.json();
+    const CHUNK = 3 * 1024 * 1024;
+    for (let offset = 0; offset < f.bytes.length; offset += CHUNK) {
+      const chunk = f.bytes.subarray(offset, Math.min(offset + CHUNK, f.bytes.length));
+      const putRes = await fetch(session.uploadUrl, {
+        method: "PUT",
+        headers: {
+          "content-type": "application/octet-stream",
+          "content-range": `bytes ${offset}-${offset + chunk.length - 1}/${f.bytes.length}`,
+        },
+        body: chunk,
+      });
+      if (!putRes.ok) {
+        throw new Error(`Graph chunk upload failed: ${putRes.status} ${await putRes.text()}`);
+      }
+    }
+  }
+
+  res = await fetch(`${base}/messages/${draft.id}/send`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    throw new Error(`Graph draft send failed: ${res.status} ${await res.text()}`);
   }
   return { ok: true, status: res.status, sender, recipient };
 }
@@ -1485,6 +1567,164 @@ async function handleContentJson(type) {
   });
 }
 
+// ─── /wp-admin/admin-ajax.php — legacy Elementor careers form bridge ────────
+// The wp-mirror careers pages still carry the Elementor Pro "Careers Form"
+// (name/email/phone/job/CV-upload/message). Elementor's bundled form JS
+// posts multipart FormData to WordPress's /wp-admin/admin-ajax.php with
+// action=elementor_pro_forms_send_form — which started 404ing the moment
+// the WP backend was retired, killing CV submissions. This handler accepts
+// that exact payload, emails the application (CV attached) through the
+// existing Graph plumbing, and answers with the JSON shape Elementor's JS
+// renders:
+//   success: { success: true,  data: { message, errors: {}, data: {} } }
+//   error:   { success: false, data: { message, errors: { <fieldId>: msg }, data: {} } }
+// Errors MUST come back HTTP 200 — Elementor only renders messages inside
+// jQuery's success callback; non-2xx hits a silent error handler and the
+// visitor sees nothing.
+
+const ELEMENTOR_FIELD_LABELS = {
+  name: "Name",
+  email: "Email",
+  message: "Other details",
+  field_58b5497: "Phone",
+  field_992eb33: "Job applying for",
+  field_37c683d: "CV/Resume",
+};
+// Hidden Elementor honeypot field (display:none in the markup). Bots fill
+// it, humans never see it — non-empty value → fake success, send nothing.
+const ELEMENTOR_HONEYPOT_IDS = new Set(["field_1b0a3f6"]);
+
+const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // matches the form's data-maxsize="10"
+// Raw-bytes threshold for switching from inline base64 /sendMail (4 MB
+// request cap) to the draft + upload-session flow.
+const SENDMAIL_INLINE_LIMIT = 2_500_000;
+
+function elementorJson(success, message, errors = {}) {
+  return new Response(
+    JSON.stringify({ success, data: { message, errors, data: {} } }),
+    { status: 200, headers: { "content-type": "application/json" } },
+  );
+}
+
+async function handleAdminAjax(request) {
+  if (request.method !== "POST") {
+    return new Response(JSON.stringify({ success: false, data: { message: "method-not-allowed" } }), {
+      status: 405,
+      headers: { "content-type": "application/json" },
+    });
+  }
+  // Cap before buffering the body: 10 MB CV + fields + multipart overhead.
+  const contentLength = Number(request.headers.get("content-length") ?? 0);
+  if (contentLength > MAX_UPLOAD_BYTES + 1_000_000) {
+    return elementorJson(false, "This file exceeds the maximum allowed size of 10 MB.", {
+      field_37c683d: "File too large (max 10 MB).",
+    });
+  }
+  let form;
+  try {
+    form = await request.formData();
+  } catch (err) {
+    console.error("[admin-ajax] formData parse failed:", err);
+    return elementorJson(false, "Your submission could not be read. Please try again.");
+  }
+  if (form.get("action") !== "elementor_pro_forms_send_form") {
+    // Other legacy WP ajax actions (WooCommerce order attribution etc.) —
+    // nothing behind them any more. Their scripts ignore failures.
+    return new Response(JSON.stringify({ success: false, data: { message: "unsupported-action" } }), {
+      status: 400,
+      headers: { "content-type": "application/json" },
+    });
+  }
+
+  const fields = {}; // fieldId → string value
+  const files = [];  // { fieldId, name, contentType, bytes }
+  for (const [key, value] of form.entries()) {
+    const m = key.match(/^form_fields\[(.+?)\](\[\])?$/);
+    if (!m) continue;
+    if (typeof value === "string") {
+      fields[m[1]] = value.trim();
+    } else if (value && typeof value.arrayBuffer === "function" && value.size > 0) {
+      files.push({
+        fieldId: m[1],
+        name: (value.name || "attachment").replace(/[\\/]/g, "_").slice(0, 150),
+        contentType: value.type || "application/octet-stream",
+        bytes: Buffer.from(await value.arrayBuffer()),
+      });
+    }
+  }
+
+  for (const id of ELEMENTOR_HONEYPOT_IDS) {
+    if (fields[id]) {
+      console.warn("[admin-ajax] honeypot tripped — submission dropped");
+      return elementorJson(true, "Thank you — your application has been received.");
+    }
+  }
+
+  const errors = {};
+  if (!fields.name) errors.name = "Please enter your name.";
+  if (!fields.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.email)) {
+    errors.email = "Please enter a valid email address.";
+  }
+  const totalUpload = files.reduce((sum, f) => sum + f.bytes.length, 0);
+  if (totalUpload > MAX_UPLOAD_BYTES) {
+    errors.field_37c683d = "File too large (max 10 MB).";
+  }
+  if (Object.keys(errors).length) {
+    return elementorJson(false, "Please correct the highlighted fields and resubmit.", errors);
+  }
+
+  // Subject context: the page title the visitor applied from ("Account
+  // Manager - InteractiveDisplays") with the WP site-name suffix stripped,
+  // falling back to the "What job are you applying for?" answer.
+  const refererTitle = String(form.get("referer_title") ?? "")
+    .replace(/\s*[-–]\s*InteractiveDisplays\s*$/i, "")
+    .trim();
+  const job = refererTitle || fields.field_992eb33 || "General application";
+  const referrer = String(form.get("referrer") ?? "");
+
+  const lines = [
+    `New careers application via ${SITE_URL.replace(/^https?:\/\//, "")}`,
+    "",
+    ...Object.entries(fields)
+      .filter(([id]) => !ELEMENTOR_HONEYPOT_IDS.has(id))
+      .map(([id, value]) => `${ELEMENTOR_FIELD_LABELS[id] ?? id}: ${value || "(not provided)"}`),
+    ...files.map((f) => `Attached: ${f.name} (${Math.round(f.bytes.length / 1024)} KB)`),
+    "",
+    "---",
+    `Submitted: ${new Date().toISOString()}`,
+    `From page: ${referrer || "(unknown)"}`,
+  ];
+
+  const to = process.env.CAREERS_RECIPIENT || process.env.LEAD_RECIPIENT || process.env.M365_SENDER;
+  const mail = {
+    subject: `New CV application: ${fields.name} — ${job}`,
+    text: lines.join("\n"),
+    to,
+    replyTo: fields.email,
+  };
+  try {
+    if (totalUpload > SENDMAIL_INLINE_LIMIT) {
+      await sendMailLargeAttachments({ ...mail, files });
+    } else {
+      await sendMail({
+        ...mail,
+        attachments: files.map((f) => ({
+          name: f.name,
+          contentType: f.contentType,
+          contentBytes: f.bytes.toString("base64"),
+        })),
+      });
+    }
+    return elementorJson(true, "Thank you — your application has been received. We'll be in touch soon.");
+  } catch (err) {
+    console.error("[admin-ajax] careers application send failed:", err);
+    return elementorJson(
+      false,
+      `Something went wrong sending your application. Please email your CV to ${ORG.email} instead.`,
+    );
+  }
+}
+
 // ─── /api/contact ────────────────────────────────────────────────────────────
 
 const leadSchema = z.object({
@@ -1686,6 +1926,9 @@ async function route(request) {
   // 3. Form + email API
   if (url.pathname === "/api/contact")    return handleContact(request);
   if (url.pathname === "/api/email-test") return handleEmailTest(request);
+  // Legacy Elementor forms on mirror pages (careers CV submissions) still
+  // post to the WordPress ajax endpoint — bridge them to Graph email.
+  if (url.pathname === "/wp-admin/admin-ajax.php") return handleAdminAjax(request);
 
   // 4. Vite-built client assets (CSS/JS bundles for our TanStack routes)
   const assetResponse = await tryServeClientAsset(request);

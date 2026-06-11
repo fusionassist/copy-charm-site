@@ -110,6 +110,7 @@ copy-charm-site/
 
 ### API + AI-agent endpoints (handled in `start-node.mjs`)
 - `POST /api/contact` — zod-validated, sends via Graph; Reply-To set to lead address
+- `POST /wp-admin/admin-ajax.php` — legacy Elementor form bridge. The mirror careers pages' "Careers Form" (CV upload) posts here; `handleAdminAjax()` parses the Elementor multipart payload, emails it via Graph (CV attached; upload-session flow for files > ~2.5 MB), and answers Elementor's expected JSON shape. Recipient: `CAREERS_RECIPIENT` → `LEAD_RECIPIENT` → `M365_SENDER`. See CHANGELOG 2026-06-11.
 - `GET /api/email-test` — smoke test
 - `GET /api/{products,posts,jobs,pages}.json` — CORS-open, structured frontmatter for agents
 - `GET /robots.txt` — Disallow when `SITE_NOINDEX=true`; AI-crawler allowlist when off
@@ -236,6 +237,7 @@ M365_CLIENT_ID=1bed80cf-...
 M365_CLIENT_SECRET=...                                          # rotate before launch
 M365_SENDER=gerry@interactivedisplays.ie
 LEAD_RECIPIENT=sales@interactivedisplays.ie
+# CAREERS_RECIPIENT=careers@interactivedisplays.ie              # optional — careers CV submissions; falls back to LEAD_RECIPIENT
 
 # Odoo Live Chat (public)
 VITE_PUBLIC_ODOO_BASE_URL=https://erp.interpos.ai
