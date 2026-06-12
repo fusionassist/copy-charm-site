@@ -761,6 +761,41 @@ function rewriteMirrorHtml(html) {
       ? out.replace("</body>", RECAPTCHA_MIRROR_SNIPPET + "</body>")
       : out + RECAPTCHA_MIRROR_SNIPPET;
   }
+  // 7. Repair the Elementor posts-grid thumbnails (careers + insights
+  //    listings). On live WordPress, Elementor's frontend JS added
+  //    `elementor-has-item-ratio` to the posts container, which switches
+  //    the thumbnails to absolute-fill-with-ratio rendering (the rules
+  //    ship in widget-posts.min.css). The wget mirror lost that runtime
+  //    class, so each thumbnail rendered its static <img> PLUS the ratio
+  //    padding — a big grey placeholder block under every card image.
+  //    Restore the class, and emulate the other half of Elementor's JS:
+  //    tagging wider-than-frame images `elementor-fit-height` so they
+  //    fill the frame's height instead of leaving a letterbox strip.
+  if (out.includes("elementor-posts--skin-cards")) {
+    out = out.replace(
+      /class="([^"]*\belementor-posts--skin-cards\b[^"]*)"/g,
+      (m, classes) =>
+        classes.includes("elementor-has-item-ratio")
+          ? m
+          : `class="${classes} elementor-has-item-ratio"`,
+    );
+    const fitScript =
+      "<script>(function(){function fit(){document.querySelectorAll('.elementor-has-item-ratio .elementor-post__thumbnail').forEach(function(t){var img=t.querySelector('img');if(!img)return;function chk(){if(!img.naturalWidth||!t.offsetWidth)return;if(img.naturalHeight/img.naturalWidth<t.offsetHeight/t.offsetWidth)t.classList.add('elementor-fit-height');}if(img.complete)chk();else img.addEventListener('load',chk);});}if(document.readyState!=='loading')fit();else document.addEventListener('DOMContentLoaded',fit);window.addEventListener('load',fit);})();</script>";
+    out = out.includes("</body>")
+      ? out.replace("</body>", fitScript + "</body>")
+      : out + fitScript;
+  }
+  // 7a. The careers listing carries two orphaned absolute-positioned
+  //     decorations from the old WP design (a floating "candidate" head-
+  //     shot and a pulsing lavender square) that ended up stranded in the
+  //     whitespace beside the job grid. Hide them.
+  if (out.includes("elementor-element-9e29f34") || out.includes("elementor-element-fcbb80b")) {
+    const hideCss =
+      "<style>.elementor-element-9e29f34,.elementor-element-fcbb80b{display:none!important}</style>";
+    out = out.includes("</head>")
+      ? out.replace("</head>", hideCss + "</head>")
+      : out + hideCss;
+  }
   return out;
 }
 

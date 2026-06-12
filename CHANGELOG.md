@@ -8,6 +8,15 @@ Format inspired by [keepachangelog.com](https://keepachangelog.com/en/1.1.0/); n
 
 ## [Unreleased]
 
+### Fixed — 2026-06-12 — careers/insights card grids: grey placeholder blocks + stranded decorations
+
+Gerry spotted two visual bugs on `/careers/`: a tall grey gradient block under every job-card image, and a lone "floating candidate" headshot (plus a lavender square) stranded in the whitespace left of the grid.
+
+Root cause of the grey blocks: on live WordPress, Elementor's frontend JS added `elementor-has-item-ratio` to the posts container at runtime, switching card thumbnails to absolute-fill rendering inside a fixed-ratio frame (those rules ship in `widget-posts.min.css`, which the mirror has). The wget snapshot captured the DOM **without** that runtime class, so every thumbnail rendered its static `<img>` (≈241px) *plus* the 65% ratio padding (≈238px) — the padded half showed the card's grey placeholder background. Affects every `elementor-posts--skin-cards` grid: `/careers/` and `/insights/`.
+
+Fix in `rewriteMirrorHtml()` step 7: re-add `elementor-has-item-ratio` to skin-cards containers, and inject a small script emulating the other half of Elementor's JS — tagging images wider than the frame `elementor-fit-height` once loaded so they fill the frame height instead of leaving a letterbox strip. Step 7a hides the two orphaned absolute-positioned decorations (`elementor-element-9e29f34` = headshot, `elementor-element-fcbb80b` = square) via injected CSS, scoped to pages that contain them. Fix validated empirically in a live browser session before implementation.
+
+
 ### Changed — 2026-06-12 — HubSpot scrubbed from source; reCAPTCHA v3 activated
 
 Follow-through on the two earlier entries today (commits `6c3ad96` + host-side):
