@@ -25,6 +25,10 @@ PID_FILE="$APP_DIR/logs/app.pid"
 BUN="$HOME/.bun/bin/bun"
 
 echo "==> 1/4 git pull"
+# Vite regenerates src/routeTree.gen.ts during every build, which dirties
+# the working tree and makes the NEXT deploy's --ff-only pull abort (bit
+# us 2026-06-11). It's a generated file — discard local changes first.
+git checkout -- src/routeTree.gen.ts 2>/dev/null || true
 git pull --ff-only
 
 echo "==> 2/4 bun install"
