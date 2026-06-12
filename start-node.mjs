@@ -678,6 +678,28 @@ function rewriteMirrorHtml(html) {
     /<script\b[^>]*src=["'][^"']*google\.com\/recaptcha\/api\.js[^"']*["'][^>]*>\s*<\/script>/gi,
     "",
   );
+  // 1a³. Strip the HubSpot WP-plugin loader (147 mirror pages, portal
+  //      146197720). It does far more than analytics: it renders the
+  //      portal's pop-up CTA forms client-side — a legacy "Apply" CV
+  //      popup was still submitting to HubSpot on the careers pages
+  //      (caught 2026-06-12). IDI is consolidating on Odoo; HubSpot is
+  //      explicitly out of the stack (CLAUDE.md §2).
+  out = out.replace(
+    /<script\b[^>]*src=["'][^"']*hs-scripts\.com[^"']*["'][^>]*>\s*<\/script>/gi,
+    "",
+  );
+  out = out.replace(
+    /<script\b[^>]*class=["']hsq-set-content-id["'][^>]*>[^<]*<\/script>/gi,
+    "",
+  );
+  out = out.replace(
+    /<link\b[^>]*href=["'][^"']*hs-scripts\.com[^"']*["'][^>]*\/?>/gi,
+    "",
+  );
+  // The careers "Apply Now" buttons pointed at #apply — an anchor that
+  // only existed as the HubSpot popup's trigger. Repoint them at the
+  // on-page Elementor form so the buttons scroll to the working form.
+  out = out.replace(/href="([^"]*)#apply"/gi, 'href="$1#careers_form"');
   // 1b. WordPress + Elementor served the homepage template at
   // /elementor-6/index.html and link rewrites in the mirror still point
   // every nav-to-home / logo-click at it (~150 mirror files). The URL is

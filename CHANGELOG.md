@@ -8,6 +8,15 @@ Format inspired by [keepachangelog.com](https://keepachangelog.com/en/1.1.0/); n
 
 ## [Unreleased]
 
+### Fixed — 2026-06-12 — strip HubSpot loader; legacy "Apply" popup was still live
+
+A CV arrived via "HubSpot Forms <noreply@notifications.hubspot.com>" from the careers pages — the old HubSpot WordPress plugin's loader (`js-eu1.hs-scripts.com/146197720.js`, baked into 147 mirror pages) renders the portal's pop-up CTA forms client-side, so a legacy "Apply" popup kept submitting straight to HubSpot's servers, bypassing the site entirely. The careers "Apply Now" buttons pointed at `#apply`, an anchor that only existed as that popup's trigger.
+
+`rewriteMirrorHtml()` now strips the loader script, the `hsq-set-content-id` analytics stub, and the hs-scripts dns-prefetch link from every mirror response (same treatment as Tawk.to), and repoints `#apply` hrefs at `#careers_form` so the Apply buttons scroll to the bridged Elementor form. HubSpot was already declared out of the stack (§2 "What we're NOT using"); this closes the last live use. Side benefit: no more HubSpot tracking cookies on the site.
+
+Note: the popup form still exists in the HubSpot portal itself — worth pausing/deleting it there so any cached pages can't submit either.
+
+
 ### Fixed — 2026-06-12 — admin-ajax bridge hardened against replayed WP form payloads
 
 Within hours of the careers bridge going live, spam bots started landing in sales@ — mail.ru/bk.ru senders replaying the **homepage** Elementor form payload (fields `field_6c180a9`/`field_3c7249d`) straight at `/wp-admin/admin-ajax.php` from old WordPress spam databases. The bridge accepted any Elementor-shaped POST. Three changes in `handleAdminAjax()`:
