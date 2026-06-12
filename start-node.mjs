@@ -785,13 +785,16 @@ function rewriteMirrorHtml(html) {
       ? out.replace("</body>", fitScript + "</body>")
       : out + fitScript;
   }
-  // 7a. The careers listing carries two orphaned absolute-positioned
-  //     decorations from the old WP design (a floating "candidate" head-
-  //     shot and a pulsing lavender square) that ended up stranded in the
-  //     whitespace beside the job grid. Hide them.
+  // 7a. Careers-listing tidy-ups (the decoration ids only exist on that
+  //     page, so this injection is effectively careers-scoped):
+  //     - hide two orphaned absolute-positioned decorations from the old
+  //       WP design (a floating "candidate" headshot and a pulsing
+  //       lavender square) stranded in the whitespace beside the grid;
+  //     - hide the publish-date strip under each job card (the meta-data
+  //       bar holds nothing else) — stale dates make open roles look dead.
   if (out.includes("elementor-element-9e29f34") || out.includes("elementor-element-fcbb80b")) {
     const hideCss =
-      "<style>.elementor-element-9e29f34,.elementor-element-fcbb80b{display:none!important}</style>";
+      "<style>.elementor-element-9e29f34,.elementor-element-fcbb80b,.elementor-post__meta-data{display:none!important}</style>";
     out = out.includes("</head>")
       ? out.replace("</head>", hideCss + "</head>")
       : out + hideCss;
