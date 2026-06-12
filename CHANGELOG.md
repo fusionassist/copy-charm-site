@@ -8,6 +8,14 @@ Format inspired by [keepachangelog.com](https://keepachangelog.com/en/1.1.0/); n
 
 ## [Unreleased]
 
+### Changed — 2026-06-12 — HubSpot scrubbed from source; reCAPTCHA v3 activated
+
+Follow-through on the two earlier entries today (commits `6c3ad96` + host-side):
+
+- **HubSpot physically removed from the mirror source**, not just stripped at serve time: the hs-scripts loader, `leadin_wordpress` inline config, `hsq-set-content-id` stub, plugin comments, and dns-prefetch deleted from 147 wp-mirror HTML files; the dead `wp-mirror/wp-json/` discovery tree (inert `leadin/v1` JSON; path already 301s) deleted outright. The runtime rewriter strips remain as defense in depth. Verified in a live browser: no `_hsq` / `HubSpotConversations` globals.
+- **reCAPTCHA v3 went live**: keys created by Gerry, added to `.env.local` on the host (never committed), full deploy run so the site key baked into the client bundle. Verified end-to-end with a real-browser careers submission (token issued → siteverify passed → Graph email delivered) and that token-less posts to both `/api/contact` and the admin-ajax bridge are now rejected.
+
+
 ### Fixed — 2026-06-12 — strip HubSpot loader; legacy "Apply" popup was still live
 
 A CV arrived via "HubSpot Forms <noreply@notifications.hubspot.com>" from the careers pages — the old HubSpot WordPress plugin's loader (`js-eu1.hs-scripts.com/146197720.js`, baked into 147 mirror pages) renders the portal's pop-up CTA forms client-side, so a legacy "Apply" popup kept submitting straight to HubSpot's servers, bypassing the site entirely. The careers "Apply Now" buttons pointed at `#apply`, an anchor that only existed as that popup's trigger.
