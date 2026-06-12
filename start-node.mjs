@@ -1674,13 +1674,42 @@ const ELEMENTOR_FIELD_LABELS = {
   name: "Name",
   email: "Email",
   message: "Other details",
+  // Careers form (b9aab9c)
   field_58b5497: "Phone",
   field_992eb33: "Job applying for",
   field_37c683d: "CV/Resume",
+  // Homepage enquiry form (323aa2d9)
+  field_6c180a9: "Phone",
+  field_3c7249d: "Interested in",
 };
-// Hidden Elementor honeypot field (display:none in the markup). Bots fill
-// it, humans never see it — non-empty value → fake success, send nothing.
-const ELEMENTOR_HONEYPOT_IDS = new Set(["field_1b0a3f6"]);
+
+// Registry of the Elementor forms that exist in the mirror. Submissions
+// whose form_id isn't here are rejected — spam bots replay captured WP
+// form payloads (arbitrary form_ids) directly at admin-ajax.php.
+//
+// honeypot: the form's hidden display:none field. Real browsers ALWAYS
+// post it (empty — FormData includes hidden inputs); bots replaying a
+// captured field subset omit it, and dumber bots fill it. Both → fake
+// success, nothing sent. This alone killed the 2026-06-12 spam wave
+// (mail.ru bots posting the homepage form without field_4ed93b1).
+const ELEMENTOR_FORMS = {
+  // Careers CV form — shared template on all five /careers/<job>/ pages.
+  b9aab9c: {
+    name: "careers",
+    honeypot: "field_1b0a3f6",
+    requireFile: true,
+    uploadField: "field_37c683d",
+  },
+  // Homepage enquiry form (mirror /).
+  "323aa2d9": {
+    name: "homepage-enquiry",
+    honeypot: "field_4ed93b1",
+    requireFile: false,
+  },
+};
+const ELEMENTOR_HONEYPOT_IDS = new Set(
+  Object.values(ELEMENTOR_FORMS).map((f) => f.honeypot),
+);
 
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // matches the form's data-maxsize="10"
 // Raw-bytes threshold for switching from inline base64 /sendMail (4 MB
@@ -1741,11 +1770,24 @@ async function handleAdminAjax(request) {
     }
   }
 
-  for (const id of ELEMENTOR_HONEYPOT_IDS) {
-    if (fields[id]) {
-      console.warn("[admin-ajax] honeypot tripped — submission dropped");
-      return elementorJson(true, "Thank you — your application has been received.");
-    }
+  const formId = String(form.get("form_id") ?? "");
+  const formDef = ELEMENTOR_FORMS[formId];
+  if (!formDef) {
+    console.warn(`[admin-ajax] unknown form_id "${formId}" — rejected`);
+    return elementorJson(
+      false,
+      `This form is no longer in service — please use ${SITE_URL}/contact-us or email ${ORG.email}.`,
+    );
+  }
+
+  // Honeypot: must be PRESENT (real browsers post hidden inputs as empty
+  // strings) and EMPTY (humans can't see it to fill it).
+  const honeypotValue = fields[formDef.honeypot];
+  if (honeypotValue === undefined || honeypotValue) {
+    console.warn(
+      `[admin-ajax] honeypot ${honeypotValue === undefined ? "missing" : "filled"} on ${formDef.name} — dropped`,
+    );
+    return elementorJson(true, "Thank you — your message has been received.");
   }
 
   const errors = {};
@@ -1754,8 +1796,11 @@ async function handleAdminAjax(request) {
     errors.email = "Please enter a valid email address.";
   }
   const totalUpload = files.reduce((sum, f) => sum + f.bytes.length, 0);
+  if (formDef.requireFile && files.length === 0) {
+    errors[formDef.uploadField] = "Please attach your CV.";
+  }
   if (totalUpload > MAX_UPLOAD_BYTES) {
-    errors.field_37c683d = "File too large (max 10 MB).";
+    errors[formDef.uploadField ?? "name"] = "File too large (max 10 MB).";
   }
   if (Object.keys(errors).length) {
     return elementorJson(false, "Please correct the highlighted fields and resubmit.", errors);
@@ -1773,7 +1818,7 @@ async function handleAdminAjax(request) {
     console.warn(`[admin-ajax] recaptcha rejected (${verdict.reason}) — submission from "${fields.email}" dropped`);
     return elementorJson(
       false,
-      `We couldn't verify your submission. Please email your CV to ${ORG.email} instead.`,
+      `We couldn't verify your submission. Please email ${ORG.email} instead.`,
     );
   }
 
@@ -1781,13 +1826,20 @@ async function handleAdminAjax(request) {
   // Manager - InteractiveDisplays") with the WP site-name suffix stripped,
   // falling back to the "What job are you applying for?" answer.
   const refererTitle = String(form.get("referer_title") ?? "")
-    .replace(/\s*[-–]\s*InteractiveDisplays\s*$/i, "")
+    .replace(/\s*[-–]\s*InteractiveDisplays.*$/i, "")
     .trim();
-  const job = refererTitle || fields.field_992eb33 || "General application";
   const referrer = String(form.get("referrer") ?? "");
+  let subject;
+  if (formDef.name === "careers") {
+    const job = refererTitle || fields.field_992eb33 || "General application";
+    subject = `New CV application: ${fields.name} — ${job}`;
+  } else {
+    const interest = fields.field_3c7249d ? ` — ${fields.field_3c7249d}` : "";
+    subject = `New website enquiry: ${fields.name}${interest}`;
+  }
 
   const lines = [
-    `New careers application via ${SITE_URL.replace(/^https?:\/\//, "")}`,
+    `New ${formDef.name === "careers" ? "careers application" : "website enquiry (homepage form)"} via ${SITE_URL.replace(/^https?:\/\//, "")}`,
     "",
     ...Object.entries(fields)
       .filter(([id]) => !ELEMENTOR_HONEYPOT_IDS.has(id))
@@ -1799,9 +1851,12 @@ async function handleAdminAjax(request) {
     `From page: ${referrer || "(unknown)"}`,
   ];
 
-  const to = process.env.CAREERS_RECIPIENT || process.env.LEAD_RECIPIENT || process.env.M365_SENDER;
+  const to =
+    formDef.name === "careers"
+      ? process.env.CAREERS_RECIPIENT || process.env.LEAD_RECIPIENT || process.env.M365_SENDER
+      : process.env.LEAD_RECIPIENT || process.env.M365_SENDER;
   const mail = {
-    subject: `New CV application: ${fields.name} — ${job}`,
+    subject,
     text: lines.join("\n"),
     to,
     replyTo: fields.email,
@@ -1819,12 +1874,17 @@ async function handleAdminAjax(request) {
         })),
       });
     }
-    return elementorJson(true, "Thank you — your application has been received. We'll be in touch soon.");
+    return elementorJson(
+      true,
+      formDef.name === "careers"
+        ? "Thank you — your application has been received. We'll be in touch soon."
+        : "Thank you — your message has been received. We'll be in touch soon.",
+    );
   } catch (err) {
-    console.error("[admin-ajax] careers application send failed:", err);
+    console.error(`[admin-ajax] ${formDef.name} send failed:`, err);
     return elementorJson(
       false,
-      `Something went wrong sending your application. Please email your CV to ${ORG.email} instead.`,
+      `Something went wrong sending your message. Please email ${ORG.email} instead.`,
     );
   }
 }

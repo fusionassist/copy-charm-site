@@ -8,6 +8,17 @@ Format inspired by [keepachangelog.com](https://keepachangelog.com/en/1.1.0/); n
 
 ## [Unreleased]
 
+### Fixed — 2026-06-12 — admin-ajax bridge hardened against replayed WP form payloads
+
+Within hours of the careers bridge going live, spam bots started landing in sales@ — mail.ru/bk.ru senders replaying the **homepage** Elementor form payload (fields `field_6c180a9`/`field_3c7249d`) straight at `/wp-admin/admin-ajax.php` from old WordPress spam databases. The bridge accepted any Elementor-shaped POST. Three changes in `handleAdminAjax()`:
+
+- **Known-forms registry** (`ELEMENTOR_FORMS`): only `b9aab9c` (careers, all five job pages) and `323aa2d9` (homepage enquiry) are bridged. Unknown form_ids get a polite "use /contact-us" rejection.
+- **Honeypot must be present AND empty.** Real browsers always POST hidden inputs (as empty strings); the bots omit the honeypot field entirely. Missing or filled → fake success, nothing sent. This alone kills the entire observed wave.
+- **Careers requires a CV file** — every real applicant attaches one (the form marks it required client-side); the bots never do.
+
+Homepage form submissions now email sales@ as "New website enquiry: <name> — <interest>" (they 404'd from cutover until the bridge accidentally revived the form — now it's deliberate). Verified locally with an exact replay of the bot payload (rejected), honeypot present/missing/filled variants, and real submission paths on both forms. reCAPTCHA v3 (previous entry) remains the second layer once keys are added.
+
+
 ### Added — 2026-06-11 — reCAPTCHA v3 spam protection on both form paths
 
 Spam was reaching sales@ through `/api/contact`, which had no anti-bot protection at all (confirmed from the inbox: gibberish leads like "UxpWkUAKhOTGGsakVuh" with dotted-gmail addresses, plus cold outreach). Google reCAPTCHA v3 — invisible, score-based, no checkbox friction — now guards both submission paths:
