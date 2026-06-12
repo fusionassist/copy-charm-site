@@ -8,6 +8,20 @@ Format inspired by [keepachangelog.com](https://keepachangelog.com/en/1.1.0/); n
 
 ## [Unreleased]
 
+### Added — 2026-06-11 — reCAPTCHA v3 spam protection on both form paths
+
+Spam was reaching sales@ through `/api/contact`, which had no anti-bot protection at all (confirmed from the inbox: gibberish leads like "UxpWkUAKhOTGGsakVuh" with dotted-gmail addresses, plus cold outreach). Google reCAPTCHA v3 — invisible, score-based, no checkbox friction — now guards both submission paths:
+
+- **Contact form** (`src/components/blocks/LeadForm.tsx` + new `src/lib/recaptcha.ts`): api.js loads lazily on first submit, `grecaptcha.execute(..., {action:"contact"})` token rides in the JSON body, `/api/contact` verifies it server-side.
+- **Careers form bridge**: `rewriteMirrorHtml()` injects a snippet (only on mirror pages containing an Elementor form) that keeps a fresh token in a hidden `recaptcha_token` input — Elementor's submit handler builds `FormData` from the form element, so the token rides along to `/wp-admin/admin-ajax.php` where `handleAdminAjax()` verifies it. Tokens expire ~2 min server-side; the snippet refreshes every 100 s.
+- **Server verification** (`verifyRecaptcha()` in `start-node.mjs`): posts to Google's `siteverify`, checks success + action match + score ≥ `RECAPTCHA_MIN_SCORE` (default 0.5). Rejections return friendly fall-back messages pointing at phone/email. Fail-open only when Google itself is unreachable — never drop a real lead to a Google outage.
+- **Legacy cleanup**: Elementor's dead `recaptcha/api.js?render=explicit` loader (17 mirror pages) is stripped by the rewriter so it can't fight our api.js load.
+
+Env-gated and inert until keys are set: `VITE_PUBLIC_RECAPTCHA_SITE_KEY` (public, also used by the mirror snippet) + `RECAPTCHA_SECRET_KEY` (server) + optional `RECAPTCHA_MIN_SCORE`. Keys are reCAPTCHA **v3** type, domains `interactivedisplays.ie` + `beta.interactivedisplays.ie`, created at google.com/recaptcha/admin. Note the client bundle bakes the site key in at build time — run a full `deploy.sh` (not just a restart) after adding the env vars.
+
+Verified locally: missing/bogus token → 400 with friendly message on both paths (bogus token exercised against Google's real siteverify); no keys → both forms pass through unchanged; keyed mirror page carries exactly one api.js load + the token seeder.
+
+
 ### Fixed — 2026-06-11 — Careers CV form 404 (legacy Elementor admin-ajax bridge)
 
 The five mirror-served careers pages carry an Elementor Pro "Careers Form" (name / email / phone / job / CV upload / message). Elementor's bundled JS posts it as multipart FormData to `/wp-admin/admin-ajax.php` with `action=elementor_pro_forms_send_form` — a WordPress endpoint that ceased to exist at cutover, so every CV submission died with a 404 and applicants saw Elementor's error state.

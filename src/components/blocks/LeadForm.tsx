@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { track } from "@/lib/track";
+import { getRecaptchaToken } from "@/lib/recaptcha";
 
 const leadSchema = z.object({
   name: z.string().min(1, "Please enter your name").max(120),
@@ -39,11 +40,13 @@ export function LeadForm() {
     setStatus("submitting");
     setErrorMessage("");
     try {
+      const recaptchaToken = await getRecaptchaToken("contact");
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           ...values,
+          recaptchaToken,
           sourcePage: typeof window !== "undefined" ? window.location.pathname : undefined,
           referrer: typeof document !== "undefined" ? document.referrer : undefined,
         }),

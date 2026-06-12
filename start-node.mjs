@@ -584,6 +584,35 @@ function buildTrackingBodyNoscript() {
 const TRACKING_HEAD_SNIPPET = buildTrackingSnippet();
 const TRACKING_BODY_NOSCRIPT = buildTrackingBodyNoscript();
 
+// reCAPTCHA v3 for the legacy Elementor forms baked into mirror HTML (the
+// careers pages). Loads api.js, then keeps a fresh token in a hidden
+// recaptcha_token input inside every .elementor-form — Elementor's submit
+// handler builds FormData from the form element, so the token rides along
+// to /wp-admin/admin-ajax.php where handleAdminAjax() verifies it. v3
+// tokens expire after ~2 minutes, hence the 100 s refresh interval.
+// Injected only into pages that actually contain an Elementor form; inert
+// when the site key env var is unset. Note: env var is read after this
+// point in module evaluation, so build lazily via function.
+function buildRecaptchaMirrorSnippet() {
+  const siteKey = process.env.VITE_PUBLIC_RECAPTCHA_SITE_KEY ?? "";
+  if (!siteKey) return "";
+  return (
+    "<script>(function(){" +
+    "function seed(){if(!window.grecaptcha)return;grecaptcha.ready(function(){" +
+    "function refresh(){grecaptcha.execute('" + siteKey + "',{action:'careers_form'}).then(function(t){" +
+    "document.querySelectorAll('form.elementor-form').forEach(function(f){" +
+    "var i=f.querySelector('input[name=recaptcha_token]');" +
+    "if(!i){i=document.createElement('input');i.type='hidden';i.name='recaptcha_token';f.appendChild(i);}" +
+    "i.value=t;});});}" +
+    "refresh();setInterval(refresh,100000);});}" +
+    "var s=document.createElement('script');" +
+    "s.src='https://www.google.com/recaptcha/api.js?render=" + siteKey + "';" +
+    "s.async=true;s.onload=seed;document.head.appendChild(s);" +
+    "})();</script>"
+  );
+}
+const RECAPTCHA_MIRROR_SNIPPET = buildRecaptchaMirrorSnippet();
+
 // Legacy Tawk.to chat is baked into the wget mirror HTML. The migration
 // dropped Tawk entirely in favour of Odoo Live Chat, so strip every
 // trace of it from mirror responses.
@@ -641,6 +670,14 @@ function rewriteMirrorHtml(html) {
   for (const pattern of LEGACY_TRACKING_PATTERNS) {
     out = out.replace(pattern, "");
   }
+  // 1a². Strip Elementor's legacy reCAPTCHA api.js loader (17 mirror pages,
+  //      id="elementor-recaptcha_v3-api-js"). Its WP server side is gone,
+  //      and a second api.js load with different render params would fight
+  //      with the snippet we inject in step 6.
+  out = out.replace(
+    /<script\b[^>]*src=["'][^"']*google\.com\/recaptcha\/api\.js[^"']*["'][^>]*>\s*<\/script>/gi,
+    "",
+  );
   // 1b. WordPress + Elementor served the homepage template at
   // /elementor-6/index.html and link rewrites in the mirror still point
   // every nav-to-home / logo-click at it (~150 mirror files). The URL is
@@ -693,6 +730,14 @@ function rewriteMirrorHtml(html) {
     out = out.includes("</body>")
       ? out.replace("</body>", ODOO_CHAT_SNIPPET + "</body>")
       : out + ODOO_CHAT_SNIPPET;
+  }
+  // 6. Seed reCAPTCHA v3 tokens into legacy Elementor forms (careers
+  //    pages) so handleAdminAjax() can verify submissions. Only on pages
+  //    that actually contain a form; inert without the site key.
+  if (RECAPTCHA_MIRROR_SNIPPET && out.includes("elementor-form")) {
+    out = out.includes("</body>")
+      ? out.replace("</body>", RECAPTCHA_MIRROR_SNIPPET + "</body>")
+      : out + RECAPTCHA_MIRROR_SNIPPET;
   }
   return out;
 }
@@ -1028,6 +1073,49 @@ async function tryServeMirror(request) {
       "x-served-by": "wp-mirror",
     },
   });
+}
+
+// ─── Google reCAPTCHA v3 (server-side verification) ──────────────────────────
+// Spam was reaching sales@ through /api/contact (which had no anti-bot
+// protection at all — confirmed from the inbox 2026-06-11). Both form
+// paths now verify a reCAPTCHA v3 token when RECAPTCHA_SECRET_KEY is set
+// in .env.local; with no secret configured everything passes as before,
+// so dev and key-less deploys keep working.
+//
+// Score model: v3 returns 0.0 (bot) – 1.0 (human). Google's recommended
+// starting threshold is 0.5; tune via RECAPTCHA_MIN_SCORE after watching
+// real traffic in the reCAPTCHA admin console.
+const RECAPTCHA_SECRET = process.env.RECAPTCHA_SECRET_KEY ?? "";
+const RECAPTCHA_MIN_SCORE = Number(process.env.RECAPTCHA_MIN_SCORE ?? "0.5");
+
+async function verifyRecaptcha(token, expectedAction, remoteIp) {
+  if (!RECAPTCHA_SECRET) return { ok: true, skipped: true };
+  if (!token) return { ok: false, reason: "missing-token" };
+  try {
+    const body = new URLSearchParams({ secret: RECAPTCHA_SECRET, response: token });
+    if (remoteIp) body.set("remoteip", remoteIp);
+    const res = await fetch("https://www.google.com/recaptcha/api/siteverify", {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body,
+    });
+    if (!res.ok) throw new Error(`siteverify HTTP ${res.status}`);
+    const data = await res.json();
+    if (!data.success) {
+      return { ok: false, reason: (data["error-codes"] ?? []).join(",") || "invalid-token" };
+    }
+    if (expectedAction && data.action && data.action !== expectedAction) {
+      return { ok: false, reason: `action-mismatch:${data.action}` };
+    }
+    if (typeof data.score === "number" && data.score < RECAPTCHA_MIN_SCORE) {
+      return { ok: false, reason: `low-score:${data.score}` };
+    }
+    return { ok: true, score: data.score };
+  } catch (err) {
+    // Google itself unreachable — fail open rather than dropping real leads.
+    console.error("[recaptcha] siteverify failed:", err);
+    return { ok: true, degraded: true };
+  }
 }
 
 // ─── M365 Graph API (OAuth2 client credentials → /sendMail) ─────────────────
@@ -1673,6 +1761,22 @@ async function handleAdminAjax(request) {
     return elementorJson(false, "Please correct the highlighted fields and resubmit.", errors);
   }
 
+  // reCAPTCHA v3 — the token rides along as a hidden recaptcha_token input
+  // seeded into the form by the snippet rewriteMirrorHtml() injects.
+  const rawToken = form.get("recaptcha_token");
+  const verdict = await verifyRecaptcha(
+    typeof rawToken === "string" ? rawToken : "",
+    "careers_form",
+    request.headers.get("x-real-ip"),
+  );
+  if (!verdict.ok) {
+    console.warn(`[admin-ajax] recaptcha rejected (${verdict.reason}) — submission from "${fields.email}" dropped`);
+    return elementorJson(
+      false,
+      `We couldn't verify your submission. Please email your CV to ${ORG.email} instead.`,
+    );
+  }
+
   // Subject context: the page title the visitor applied from ("Account
   // Manager - InteractiveDisplays") with the WP site-name suffix stripped,
   // falling back to the "What job are you applying for?" answer.
@@ -1733,6 +1837,7 @@ const leadSchema = z.object({
   phone: z.string().max(40).optional().or(z.literal("")),
   company: z.string().max(120).optional().or(z.literal("")),
   message: z.string().min(10).max(5000),
+  recaptchaToken: z.string().max(5000).optional(),
   sourcePage: z.string().max(500).optional(),
   referrer: z.string().max(500).optional(),
 });
@@ -1814,6 +1919,21 @@ async function handleContact(request) {
     );
   }
   const lead = parsed.data;
+  const verdict = await verifyRecaptcha(
+    lead.recaptchaToken,
+    "contact",
+    request.headers.get("x-real-ip"),
+  );
+  if (!verdict.ok) {
+    console.warn(`[contact] recaptcha rejected (${verdict.reason}) — lead from "${lead.email}" dropped`);
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: "We couldn't verify your submission. Please call us or email sales@interactivedisplays.ie directly.",
+      }),
+      { status: 400, headers: { "content-type": "application/json" } },
+    );
+  }
   const { text, html } = formatLeadEmail(lead);
   try {
     const result = await sendMail({

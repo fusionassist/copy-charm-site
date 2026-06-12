@@ -9,27 +9,161 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermsRouteImport } from './routes/terms'
+import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
+import { Route as DigitalSignageForSchoolsRouteImport } from './routes/digital-signage-for-schools'
+import { Route as ContactUsRouteImport } from './routes/contact-us'
+import { Route as IndexRouteImport } from './routes/index'
+import { Route as DevMdxTestRouteImport } from './routes/dev.mdx-test'
 
-export interface FileRoutesByFullPath {}
-export interface FileRoutesByTo {}
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
+  id: '/privacy-policy',
+  path: '/privacy-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DigitalSignageForSchoolsRoute =
+  DigitalSignageForSchoolsRouteImport.update({
+    id: '/digital-signage-for-schools',
+    path: '/digital-signage-for-schools',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ContactUsRoute = ContactUsRouteImport.update({
+  id: '/contact-us',
+  path: '/contact-us',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DevMdxTestRoute = DevMdxTestRouteImport.update({
+  id: '/dev/mdx-test',
+  path: '/dev/mdx-test',
+  getParentRoute: () => rootRouteImport,
+} as any)
+
+export interface FileRoutesByFullPath {
+  '/': typeof IndexRoute
+  '/contact-us': typeof ContactUsRoute
+  '/digital-signage-for-schools': typeof DigitalSignageForSchoolsRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
+  '/terms': typeof TermsRoute
+  '/dev/mdx-test': typeof DevMdxTestRoute
+}
+export interface FileRoutesByTo {
+  '/': typeof IndexRoute
+  '/contact-us': typeof ContactUsRoute
+  '/digital-signage-for-schools': typeof DigitalSignageForSchoolsRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
+  '/terms': typeof TermsRoute
+  '/dev/mdx-test': typeof DevMdxTestRoute
+}
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
+  '/contact-us': typeof ContactUsRoute
+  '/digital-signage-for-schools': typeof DigitalSignageForSchoolsRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
+  '/terms': typeof TermsRoute
+  '/dev/mdx-test': typeof DevMdxTestRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: never
+  fullPaths:
+    | '/'
+    | '/contact-us'
+    | '/digital-signage-for-schools'
+    | '/privacy-policy'
+    | '/terms'
+    | '/dev/mdx-test'
   fileRoutesByTo: FileRoutesByTo
-  to: never
-  id: '__root__'
+  to:
+    | '/'
+    | '/contact-us'
+    | '/digital-signage-for-schools'
+    | '/privacy-policy'
+    | '/terms'
+    | '/dev/mdx-test'
+  id:
+    | '__root__'
+    | '/'
+    | '/contact-us'
+    | '/digital-signage-for-schools'
+    | '/privacy-policy'
+    | '/terms'
+    | '/dev/mdx-test'
   fileRoutesById: FileRoutesById
 }
-export interface RootRouteChildren {}
-
-declare module '@tanstack/react-router' {
-  interface FileRoutesByPath {}
+export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
+  ContactUsRoute: typeof ContactUsRoute
+  DigitalSignageForSchoolsRoute: typeof DigitalSignageForSchoolsRoute
+  PrivacyPolicyRoute: typeof PrivacyPolicyRoute
+  TermsRoute: typeof TermsRoute
+  DevMdxTestRoute: typeof DevMdxTestRoute
 }
 
-const rootRouteChildren: RootRouteChildren = {}
+declare module '@tanstack/react-router' {
+  interface FileRoutesByPath {
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy-policy': {
+      id: '/privacy-policy'
+      path: '/privacy-policy'
+      fullPath: '/privacy-policy'
+      preLoaderRoute: typeof PrivacyPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/digital-signage-for-schools': {
+      id: '/digital-signage-for-schools'
+      path: '/digital-signage-for-schools'
+      fullPath: '/digital-signage-for-schools'
+      preLoaderRoute: typeof DigitalSignageForSchoolsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact-us': {
+      id: '/contact-us'
+      path: '/contact-us'
+      fullPath: '/contact-us'
+      preLoaderRoute: typeof ContactUsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dev/mdx-test': {
+      id: '/dev/mdx-test'
+      path: '/dev/mdx-test'
+      fullPath: '/dev/mdx-test'
+      preLoaderRoute: typeof DevMdxTestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+  }
+}
+
+const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
+  ContactUsRoute: ContactUsRoute,
+  DigitalSignageForSchoolsRoute: DigitalSignageForSchoolsRoute,
+  PrivacyPolicyRoute: PrivacyPolicyRoute,
+  TermsRoute: TermsRoute,
+  DevMdxTestRoute: DevMdxTestRoute,
+}
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()

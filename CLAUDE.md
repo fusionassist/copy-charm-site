@@ -243,6 +243,13 @@ LEAD_RECIPIENT=sales@interactivedisplays.ie
 VITE_PUBLIC_ODOO_BASE_URL=https://erp.interpos.ai
 VITE_PUBLIC_ODOO_LIVECHAT_CHANNEL_ID=4
 
+# Google reCAPTCHA v3 — spam protection on /api/contact + careers bridge.
+# Inert until both are set. Site key is baked into the client bundle at
+# build time — full deploy.sh after changing, not just a restart.
+VITE_PUBLIC_RECAPTCHA_SITE_KEY=
+RECAPTCHA_SECRET_KEY=
+# RECAPTCHA_MIN_SCORE=0.5
+
 # Plesk Node runtime
 PORT=3417
 HOST=127.0.0.1
