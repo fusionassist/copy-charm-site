@@ -16,6 +16,8 @@ Root cause of the grey blocks: on live WordPress, Elementor's frontend JS added 
 
 Fix in `rewriteMirrorHtml()` step 7: re-add `elementor-has-item-ratio` to skin-cards containers, and inject a small script emulating the other half of Elementor's JS — tagging images wider than the frame `elementor-fit-height` once loaded so they fill the frame height instead of leaving a letterbox strip. Step 7a hides the two orphaned absolute-positioned decorations (`elementor-element-9e29f34` = headshot, `elementor-element-fcbb80b` = square) via injected CSS, scoped to pages that contain them. Fix validated empirically in a live browser session before implementation.
 
+Follow-up (same day, Gerry request): the publish-date strip under each job card (`.elementor-post__meta-data` — holds only the date) is hidden too; stale dates made open roles look dead. Same careers-scoped injection.
+
 
 ### Changed — 2026-06-12 — HubSpot scrubbed from source; reCAPTCHA v3 activated
 
