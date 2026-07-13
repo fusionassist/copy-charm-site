@@ -24,6 +24,10 @@ const SPEC_LABELS: Record<string, string> = {
   brightness: "Brightness",
   player: "Media player",
   os: "Operating system",
+  platform: "Platform / CMS",
+  cms: "Content management",
+  mediaPlayback: "Media playback",
+  ports: "Ports",
   operation: "Operation",
   contrast: "Contrast ratio",
   viewingAngle: "Viewing angle",
@@ -64,6 +68,16 @@ export function ProductPage({
 
   const specEntries = Object.entries(product.specs ?? {});
   const heroSpecs = specEntries.slice(0, 6);
+
+  // Multi-size comparison: build a union of spec keys (ordered by the first
+  // variant) so each row lines up across every size column.
+  const variants = product.variants ?? [];
+  const variantKeys: string[] = [];
+  for (const v of variants) {
+    for (const k of Object.keys(v.specs)) {
+      if (!variantKeys.includes(k)) variantKeys.push(k);
+    }
+  }
 
   const related = (product.relatedProducts ?? [])
     .map((slug) => getProduct(slug))
@@ -196,28 +210,75 @@ export function ProductPage({
       </section>
 
       {/* ── SPECIFICATIONS ──────────────────────────────────────────────── */}
-      {specEntries.length > 0 && (
+      {(specEntries.length > 0 || variantKeys.length > 0) && (
         <section className="border-b border-border bg-background py-16 sm:py-20">
           <div className="mx-auto max-w-4xl px-4 sm:px-6">
             <p className="text-sm font-semibold uppercase tracking-widest text-brand-cyan">
               Specifications
             </p>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight">At a glance</h2>
-            <dl className="mt-8 divide-y divide-border overflow-hidden rounded-xl border border-border">
-              {specEntries.map(([key, value], i) => (
-                <div
-                  key={key}
-                  className={`grid grid-cols-1 gap-1 px-5 py-3.5 sm:grid-cols-3 sm:gap-4 ${
-                    i % 2 ? "bg-muted/30" : "bg-background"
-                  }`}
-                >
-                  <dt className="text-sm font-semibold text-muted-foreground">{labelFor(key)}</dt>
-                  <dd className="text-sm font-medium text-foreground sm:col-span-2">
-                    {String(value)}
-                  </dd>
-                </div>
-              ))}
-            </dl>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight">
+              {variants.length > 0 ? "Compare the sizes" : "At a glance"}
+            </h2>
+
+            {/* Per-size comparison table (when variants are defined) */}
+            {variantKeys.length > 0 && (
+              <div className="mt-8 overflow-x-auto">
+                <table className="w-full border-collapse overflow-hidden rounded-xl border border-border text-sm">
+                  <thead>
+                    <tr>
+                      <th className="bg-muted/40 px-5 py-3 text-left font-semibold text-muted-foreground">
+                        Specification
+                      </th>
+                      {variants.map((v) => (
+                        <th
+                          key={v.name}
+                          className="border-l border-border bg-brand-navy px-5 py-3 text-left font-bold text-white"
+                        >
+                          {v.name}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {variantKeys.map((key, i) => (
+                      <tr key={key} className={i % 2 ? "bg-muted/30" : "bg-background"}>
+                        <td className="px-5 py-3 font-semibold text-muted-foreground">
+                          {labelFor(key)}
+                        </td>
+                        {variants.map((v) => (
+                          <td
+                            key={v.name}
+                            className="border-l border-border px-5 py-3 font-medium text-foreground"
+                          >
+                            {v.specs[key] != null ? String(v.specs[key]) : "—"}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Single shared spec list (only when there are no size variants) */}
+            {variantKeys.length === 0 && specEntries.length > 0 && (
+              <dl className="mt-8 divide-y divide-border overflow-hidden rounded-xl border border-border">
+                {specEntries.map(([key, value], i) => (
+                  <div
+                    key={key}
+                    className={`grid grid-cols-1 gap-1 px-5 py-3.5 sm:grid-cols-3 sm:gap-4 ${
+                      i % 2 ? "bg-muted/30" : "bg-background"
+                    }`}
+                  >
+                    <dt className="text-sm font-semibold text-muted-foreground">{labelFor(key)}</dt>
+                    <dd className="text-sm font-medium text-foreground sm:col-span-2">
+                      {String(value)}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+
             {product.brochures && product.brochures.length > 0 && (
               <div className="mt-6 flex flex-wrap gap-3">
                 {product.brochures.map((b) => (

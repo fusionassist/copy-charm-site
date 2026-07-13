@@ -165,7 +165,8 @@ const MIRROR_PAGES = [
   "/product/professional-monitor/",
   "/product/large-format-signage/",
   "/product/lcd-video-wall/",
-  "/product/android-network-display/",
+  // "/product/android-network-display/" removed 2026-07-13 — now an MDX
+  // product page (auto-added to the sitemap by the products loader).
   "/product/dual-sided-standing-totem/",
   "/product/slim-standing-totem/",
   "/product/network-menu-boards/",
@@ -307,6 +308,22 @@ function resolveRedirect(pathname, search) {
   if (wgetMatch && POST_ID_MAP[wgetMatch[1]]) {
     return { target: POST_ID_MAP[wgetMatch[1]], status: 301 };
   }
+  // Professional Android Displays consolidation (2026-07-13). The 43" and
+  // 32" Moytronix Android displays now live on ONE React page that took
+  // over the legacy /product/android-network-display URL:
+  //   - trailing-slash form → canonical no-slash (React route match)
+  //   - the two short-lived standalone /product/moy-*ds60 pages → the
+  //     combined page (they were merged the same day).
+  const androidConsolidation = {
+    "/product/android-network-display/": "/product/android-network-display",
+    "/product/moy-43ds60":  "/product/android-network-display",
+    "/product/moy-43ds60/": "/product/android-network-display",
+    "/product/moy-32ds60":  "/product/android-network-display",
+    "/product/moy-32ds60/": "/product/android-network-display",
+  };
+  if (androidConsolidation[pathname]) {
+    return { target: androidConsolidation[pathname], status: 301 };
+  }
   // /elementor-6/* — legacy WordPress + Elementor homepage template path.
   // Same content as /, so any visitor (or Googlebot) hitting it gets
   // 301'd to the canonical homepage.
@@ -393,6 +410,11 @@ const MIRROR_EXCLUDE = new Set([
   // <sector> Ireland" queries.
   "/digital-signage-for-schools",
   "/digital-signage-for-schools/",
+  // Professional Android Displays (Moy-43DS60 / Moy-32DS60) — a React
+  // product page took over this legacy Android Network Display URL. The
+  // trailing-slash form 301s to this canonical no-slash form (see
+  // resolveRedirect). Bypasses the now-stale mirror snapshot.
+  "/product/android-network-display",
   "/llms.txt",
   "/llms-full.txt",
   "/robots.txt",
@@ -700,6 +722,11 @@ function rewriteMirrorHtml(html) {
   // only existed as the HubSpot popup's trigger. Repoint them at the
   // on-page Elementor form so the buttons scroll to the working form.
   out = out.replace(/href="([^"]*)#apply"/gi, 'href="$1#careers_form"');
+  // 1d. "Android Network Display(s)" → "Professional Displays Android"
+  //     everywhere in the mirror nav/menu + promo boxes (2026-07-13
+  //     rename). The href /product/android-network-display/ is left as-is;
+  //     it 301s to the new combined React product page.
+  out = out.replace(/Android Network Displays?/g, "Professional Displays Android");
   // 1b. WordPress + Elementor served the homepage template at
   // /elementor-6/index.html and link rewrites in the mirror still point
   // every nav-to-home / logo-click at it (~150 mirror files). The URL is

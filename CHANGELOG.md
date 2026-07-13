@@ -8,6 +8,19 @@ Format inspired by [keepachangelog.com](https://keepachangelog.com/en/1.1.0/); n
 
 ## [Unreleased]
 
+### Changed — 2026-07-13 — Consolidate to one "Professional Displays Android" page; remove BrightSign
+
+Repositioning of the Moy-DS60 products per Gerry: they run **Android + ScreenFusion** (IDI's own cloud platform), *not* BrightSign. The two standalone pages are merged into one, replacing the legacy Android Network Display product.
+
+- **One combined page** at the reused `/product/android-network-display` URL (SEO-preserving) — `src/content/products/android-network-display.mdx`, title "Professional Displays — Android", showing both sizes via a new `variants` frontmatter field.
+- **ProductPage supports `variants`** (`src/lib/mdx.ts` type + `ProductPage.tsx`): when present, renders a side-by-side per-size comparison spec table (43″ 4K vs 32″ 2K) instead of a single spec list.
+- **BrightSign removed everywhere** — the MDX, the page, and the brochure. Media system reframed as Android + ScreenFusion (playback, remote management, scheduling). Panel/physical/connectivity specs unchanged (same TCL MOKA panel).
+- **`start-node.mjs`:** `/product/android-network-display` added to `MIRROR_EXCLUDE` (React takes over the URL); `resolveRedirect` 301s the trailing-slash form + the two short-lived `/product/moy-43ds60|moy-32ds60` pages → the combined page; `rewriteMirrorHtml` renames "Android Network Display(s)" → "Professional Displays Android" across all mirror nav/menus; stale mirror sitemap entry removed (dedup).
+- **Brochure redone** → `public/brochures/Moytronix-Professional-Android-Displays.pdf` (old Moy-DS60-Series.pdf deleted); linked from the page.
+
+Verified locally: combined page 200, all three 301s resolve, zero "BrightSign" on the page, ScreenFusion present, both SKUs shown, homepage menu renamed, sitemap has the product once.
+
+
 ### Added — 2026-07-13 — First real React product pages: Moytronix Moy-DS60 Series
 
 The site's first MDX-backed, TanStack-rendered `/product/*` pages — the Moytronix **Moy-43DS60** (43″ 4K) and **Moy-32DS60** (32″ 2K), IDI's rebadge of the TCL MOKA DS60P (BrightSign built-in). Until now every `/product/*` URL was mirror-served; these are the first built in React.

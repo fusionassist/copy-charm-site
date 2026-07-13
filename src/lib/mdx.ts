@@ -28,6 +28,10 @@ export type ProductFrontmatter = {
   gallery?: string[];
   shortDescription: string;
   specs?: Record<string, string | number>;
+  // Per-size (or per-model) variants — when present, ProductPage renders a
+  // side-by-side comparison spec table in addition to the shared `specs`
+  // highlights shown in the hero. Used for multi-size product lines.
+  variants?: Array<{ name: string; specs: Record<string, string | number> }>;
   brochures?: Array<{ label: string; href: string }>;
   relatedProducts?: string[];
   faqs?: Array<{ q: string; a: string }>;
