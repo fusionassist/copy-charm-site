@@ -11,9 +11,11 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
+import { Route as GoogleAdsToolRouteImport } from './routes/google-ads-tool'
 import { Route as DigitalSignageForSchoolsRouteImport } from './routes/digital-signage-for-schools'
 import { Route as ContactUsRouteImport } from './routes/contact-us'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ProductSlugRouteImport } from './routes/product.$slug'
 import { Route as DevMdxTestRouteImport } from './routes/dev.mdx-test'
 
 const TermsRoute = TermsRouteImport.update({
@@ -24,6 +26,11 @@ const TermsRoute = TermsRouteImport.update({
 const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
   id: '/privacy-policy',
   path: '/privacy-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GoogleAdsToolRoute = GoogleAdsToolRouteImport.update({
+  id: '/google-ads-tool',
+  path: '/google-ads-tool',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DigitalSignageForSchoolsRoute =
@@ -42,6 +49,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProductSlugRoute = ProductSlugRouteImport.update({
+  id: '/product/$slug',
+  path: '/product/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DevMdxTestRoute = DevMdxTestRouteImport.update({
   id: '/dev/mdx-test',
   path: '/dev/mdx-test',
@@ -52,26 +64,32 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/contact-us': typeof ContactUsRoute
   '/digital-signage-for-schools': typeof DigitalSignageForSchoolsRoute
+  '/google-ads-tool': typeof GoogleAdsToolRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/terms': typeof TermsRoute
   '/dev/mdx-test': typeof DevMdxTestRoute
+  '/product/$slug': typeof ProductSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/contact-us': typeof ContactUsRoute
   '/digital-signage-for-schools': typeof DigitalSignageForSchoolsRoute
+  '/google-ads-tool': typeof GoogleAdsToolRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/terms': typeof TermsRoute
   '/dev/mdx-test': typeof DevMdxTestRoute
+  '/product/$slug': typeof ProductSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/contact-us': typeof ContactUsRoute
   '/digital-signage-for-schools': typeof DigitalSignageForSchoolsRoute
+  '/google-ads-tool': typeof GoogleAdsToolRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/terms': typeof TermsRoute
   '/dev/mdx-test': typeof DevMdxTestRoute
+  '/product/$slug': typeof ProductSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -79,34 +97,42 @@ export interface FileRouteTypes {
     | '/'
     | '/contact-us'
     | '/digital-signage-for-schools'
+    | '/google-ads-tool'
     | '/privacy-policy'
     | '/terms'
     | '/dev/mdx-test'
+    | '/product/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/contact-us'
     | '/digital-signage-for-schools'
+    | '/google-ads-tool'
     | '/privacy-policy'
     | '/terms'
     | '/dev/mdx-test'
+    | '/product/$slug'
   id:
     | '__root__'
     | '/'
     | '/contact-us'
     | '/digital-signage-for-schools'
+    | '/google-ads-tool'
     | '/privacy-policy'
     | '/terms'
     | '/dev/mdx-test'
+    | '/product/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ContactUsRoute: typeof ContactUsRoute
   DigitalSignageForSchoolsRoute: typeof DigitalSignageForSchoolsRoute
+  GoogleAdsToolRoute: typeof GoogleAdsToolRoute
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
   TermsRoute: typeof TermsRoute
   DevMdxTestRoute: typeof DevMdxTestRoute
+  ProductSlugRoute: typeof ProductSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -123,6 +149,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy-policy'
       fullPath: '/privacy-policy'
       preLoaderRoute: typeof PrivacyPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/google-ads-tool': {
+      id: '/google-ads-tool'
+      path: '/google-ads-tool'
+      fullPath: '/google-ads-tool'
+      preLoaderRoute: typeof GoogleAdsToolRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/digital-signage-for-schools': {
@@ -146,6 +179,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/product/$slug': {
+      id: '/product/$slug'
+      path: '/product/$slug'
+      fullPath: '/product/$slug'
+      preLoaderRoute: typeof ProductSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dev/mdx-test': {
       id: '/dev/mdx-test'
       path: '/dev/mdx-test'
@@ -160,9 +200,11 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ContactUsRoute: ContactUsRoute,
   DigitalSignageForSchoolsRoute: DigitalSignageForSchoolsRoute,
+  GoogleAdsToolRoute: GoogleAdsToolRoute,
   PrivacyPolicyRoute: PrivacyPolicyRoute,
   TermsRoute: TermsRoute,
   DevMdxTestRoute: DevMdxTestRoute,
+  ProductSlugRoute: ProductSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
