@@ -8,6 +8,11 @@ Format inspired by [keepachangelog.com](https://keepachangelog.com/en/1.1.0/); n
 
 ## [Unreleased]
 
+### Fixed — 2026-07-13 — React top nav now matches the live site menu
+
+The React `Nav` (shown on TanStack pages — product pages, contact, sectors, terms) had generic placeholder labels (Solutions / Products / Brands / Insights / Careers + "Get a quote") that didn't match the rest of the site's WP menu. Rebuilt `src/components/nav/Nav.tsx` to mirror the real menu: **Home · Screen Solutions · Services · Visitor Assist · Careers** with dropdowns (Screen Solutions → product categories + the new Professional Displays Android; Services → supply-installation / training-support / content-management; Visitor Assist → queue / ticketing / appointment / counting / survey / reception / vending), and the CTA renamed to **"Get In Touch"** to match. Added a mobile hamburger menu (React pages previously had no nav on mobile). Desktop dropdowns are CSS hover/focus (no JS); only the mobile toggle uses state. Note: the footer's column links (Solutions/Products/Brands/Insights) are a separate footer-sitemap and were left as-is.
+
+
 ### Changed — 2026-07-13 — Consolidate to one "Professional Displays Android" page; remove BrightSign
 
 Repositioning of the Moy-DS60 products per Gerry: they run **Android + ScreenFusion** (IDI's own cloud platform), *not* BrightSign. The two standalone pages are merged into one, replacing the legacy Android Network Display product.
