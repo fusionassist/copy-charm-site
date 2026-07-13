@@ -98,6 +98,7 @@ copy-charm-site/
 
 ### TanStack routes (React-rendered, served from `dist/server/server.js`)
 - `/contact-us` — real React route, IDI brand, contact form, LocalBusiness schema
+- `/product/$slug` — MDX-backed product pages (`src/routes/product.$slug.tsx` + `src/components/blocks/ProductPage.tsx`). Content in `src/content/products/*.mdx`. New slugs (no mirror file) fall through here from the mirror; legacy `/product/*` with a mirror snapshot are still mirror-served. First live: `moy-43ds60`, `moy-32ds60`. Auto-added to sitemap + `/api/products.json`.
 - `/dev/mdx-test` — internal noindex QA route
 
 ### Mirror routes (wp-mirror static HTML, mutated on the fly)

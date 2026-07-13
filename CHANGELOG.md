@@ -8,6 +8,20 @@ Format inspired by [keepachangelog.com](https://keepachangelog.com/en/1.1.0/); n
 
 ## [Unreleased]
 
+### Added — 2026-07-13 — First real React product pages: Moytronix Moy-DS60 Series
+
+The site's first MDX-backed, TanStack-rendered `/product/*` pages — the Moytronix **Moy-43DS60** (43″ 4K) and **Moy-32DS60** (32″ 2K), IDI's rebadge of the TCL MOKA DS60P (BrightSign built-in). Until now every `/product/*` URL was mirror-served; these are the first built in React.
+
+- **New route** `src/routes/product.$slug.tsx` — dynamic `/product/$slug`, loader throws `notFound()` for unknown slugs. Runtime precedence is unchanged: the wp-mirror serves legacy products first, and brand-new slugs (no mirror file) fall through to this route. Emits per-product `<title>`/description/canonical/og:image.
+- **New block** `src/components/blocks/ProductPage.tsx` — reusable product template matching the SectorPage design language: brand-navy hero with key specs + CTAs + brochure download, full spec table, MDX prose body (styled with child-targeting utilities — no `@tailwindcss/typography` in this project), gallery, FAQ, related products, closing CTA. Emits Product + BreadcrumbList + FAQPage JSON-LD.
+- **Content** `src/content/products/moy-43ds60.mdx` + `moy-32ds60.mdx`; product imagery in `public/images/screens/moy-ds60-*.jpg`; the series brochure at `public/brochures/Moytronix-Moy-DS60-Series.pdf` is linked from both pages.
+- New products appear automatically in `/sitemap.xml` and `/api/products.json` via the runtime frontmatter loader — no manual list edits.
+
+Verified locally: both pages 200, unknown slug 404, existing mirror products unaffected, sitemap + JSON API include both. (Static assets 404 on local Windows only — a `\` vs `/` path-check quirk in `tryServeClientAsset`; they serve fine on the Linux host, same path that serves `/brand/` + `/images/` on the live site today.)
+
+Follow-ups: cross-link the two products from the mirror-served category/shop listing pages (still legacy HTML); consider a small fix to `tryServeClientAsset` so static assets also serve during local Windows testing.
+
+
 ### Fixed — 2026-06-12 — careers/insights card grids: grey placeholder blocks + stranded decorations
 
 Gerry spotted two visual bugs on `/careers/`: a tall grey gradient block under every job-card image, and a lone "floating candidate" headshot (plus a lavender square) stranded in the whitespace left of the grid.
