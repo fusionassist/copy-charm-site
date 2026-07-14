@@ -8,6 +8,11 @@ Format inspired by [keepachangelog.com](https://keepachangelog.com/en/1.1.0/); n
 
 ## [Unreleased]
 
+### Fixed — 2026-07-13 — Lead emails named "beta.interactivedisplays.ie" post-cutover
+
+Contact-form notification emails (and the /api/email-test subject) had "beta.interactivedisplays.ie" hardcoded in `formatLeadEmail`, so leads landing in sales@ still referenced the beta host after production cutover. Now derived from `SITE_URL` (→ `interactivedisplays.ie` in prod). Also flipped the `start-node.mjs` `SITE_URL` fallback default from the beta host to `https://interactivedisplays.ie` to match the React routes' default (only relevant if `VITE_PUBLIC_SITE_URL` is ever unset — it's set on the host). The two remaining "beta" mentions are REDIRECT_TO_HOST comments describing the beta→prod forward, left intact.
+
+
 ### Fixed — 2026-07-13 — React top nav now matches the live site menu
 
 The React `Nav` (shown on TanStack pages — product pages, contact, sectors, terms) had generic placeholder labels (Solutions / Products / Brands / Insights / Careers + "Get a quote") that didn't match the rest of the site's WP menu. Rebuilt `src/components/nav/Nav.tsx` to mirror the real menu: **Home · Screen Solutions · Services · Visitor Assist · Careers** with dropdowns (Screen Solutions → product categories + the new Professional Displays Android; Services → supply-installation / training-support / content-management; Visitor Assist → queue / ticketing / appointment / counting / survey / reception / vending), and the CTA renamed to **"Get In Touch"** to match. Added a mobile hamburger menu (React pages previously had no nav on mobile). Desktop dropdowns are CSS hover/focus (no JS); only the mobile toggle uses state. Note: the footer's column links (Solutions/Products/Brands/Insights) are a separate footer-sitemap and were left as-is.

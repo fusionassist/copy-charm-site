@@ -51,7 +51,7 @@ function parseFrontmatter(raw) {
 const MIRROR_DIR = resolve(process.cwd(), "wp-mirror");
 const CLIENT_DIR = resolve(process.cwd(), "dist", "client");
 const CONTENT_DIR = resolve(process.cwd(), "src", "content");
-const SITE_URL = process.env.VITE_PUBLIC_SITE_URL ?? "https://beta.interactivedisplays.ie";
+const SITE_URL = process.env.VITE_PUBLIC_SITE_URL ?? "https://interactivedisplays.ie";
 const PORT = process.env.PORT ?? 3000;
 const HOST = process.env.HOST ?? undefined;
 
@@ -1370,7 +1370,7 @@ async function handleEmailTest(request) {
   }
   try {
     const result = await sendMail({
-      subject: "beta.interactivedisplays.ie Graph API test",
+      subject: `${SITE_URL.replace(/^https?:\/\//, "").replace(/\/+$/, "")} Graph API test`,
       text: `Smoke test from the beta deployment confirming the M365 Graph API path works.\n\nTimestamp: ${new Date().toISOString()}\nSender: ${process.env.M365_SENDER}\nRecipient: ${process.env.LEAD_RECIPIENT ?? "(falls back to sender)"}`,
     });
     return new Response(JSON.stringify({ ok: true, ...result }, null, 2), {
@@ -1999,8 +1999,11 @@ function escapeHtml(input) {
 }
 
 function formatLeadEmail(lead) {
+  // Derive the site host from SITE_URL so lead emails name the real site
+  // (interactivedisplays.ie post-cutover) rather than a hardcoded host.
+  const siteHost = SITE_URL.replace(/^https?:\/\//, "").replace(/\/+$/, "");
   const lines = [
-    `New contact form submission from beta.interactivedisplays.ie`,
+    `New contact form submission from ${siteHost}`,
     ``,
     `Name:    ${lead.name}`,
     `Email:   ${lead.email}`,
@@ -2018,7 +2021,7 @@ function formatLeadEmail(lead) {
   const text = lines.join("\n");
   const html = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px;">
-      <p>New contact form submission from <strong>beta.interactivedisplays.ie</strong></p>
+      <p>New contact form submission from <strong>${siteHost}</strong></p>
       <table style="border-collapse: collapse; width: 100%;">
         <tr><td style="padding: 4px 12px 4px 0; color: #666;">Name</td><td><strong>${escapeHtml(lead.name)}</strong></td></tr>
         <tr><td style="padding: 4px 12px 4px 0; color: #666;">Email</td><td><a href="mailto:${escapeHtml(lead.email)}">${escapeHtml(lead.email)}</a></td></tr>
