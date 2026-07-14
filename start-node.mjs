@@ -1371,7 +1371,7 @@ async function handleEmailTest(request) {
   try {
     const result = await sendMail({
       subject: `${SITE_URL.replace(/^https?:\/\//, "").replace(/\/+$/, "")} Graph API test`,
-      text: `Smoke test from the beta deployment confirming the M365 Graph API path works.\n\nTimestamp: ${new Date().toISOString()}\nSender: ${process.env.M365_SENDER}\nRecipient: ${process.env.LEAD_RECIPIENT ?? "(falls back to sender)"}`,
+      text: `Smoke test from ${SITE_URL.replace(/^https?:\/\//, "").replace(/\/+$/, "")} confirming the M365 Graph API path works.\n\nTimestamp: ${new Date().toISOString()}\nSender: ${process.env.M365_SENDER}\nRecipient: ${process.env.LEAD_RECIPIENT ?? "(falls back to sender)"}`,
     });
     return new Response(JSON.stringify({ ok: true, ...result }, null, 2), {
       status: 200,
