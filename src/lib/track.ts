@@ -34,6 +34,25 @@ export function track(event: TrackingEvent): void {
     console.warn("[track] gtag emit failed:", err);
   }
 
+  // Google Ads conversion ping. Fires only for lead form submits and only
+  // when both env vars are set (VITE_PUBLIC_GOOGLE_ADS_ID +
+  // VITE_PUBLIC_GOOGLE_ADS_LEAD_LABEL — the conversion action's label).
+  try {
+    const w = window;
+    const adsId = import.meta.env.VITE_PUBLIC_GOOGLE_ADS_ID;
+    const leadLabel = import.meta.env.VITE_PUBLIC_GOOGLE_ADS_LEAD_LABEL;
+    if (
+      event.type === "lead_form_submit" &&
+      typeof w.gtag === "function" &&
+      adsId &&
+      leadLabel
+    ) {
+      w.gtag("event", "conversion", { send_to: `${adsId}/${leadLabel}` });
+    }
+  } catch (err) {
+    console.warn("[track] ads conversion emit failed:", err);
+  }
+
   // GTM dataLayer push — bypasses gtag.js for users on GTM-only setups
   try {
     const w = window;
