@@ -116,6 +116,7 @@ const STATIC_PAGES = [
   { path: "/digital-signage-for-schools", title: "Digital signage for schools Ireland", description: "School-focused digital signage and interactive whiteboards across Ireland.", priority: "0.9", changefreq: "monthly" },
   // Category / ad-landing pages (React routes, take over their own URLs)
   { path: "/digital-signage", title: "Digital Signage Ireland", description: "Digital signage supplied & installed nationwide across Ireland.", priority: "0.9", changefreq: "monthly" },
+  { path: "/digital-menu-boards", title: "Digital Menu Boards Ireland", description: "Digital menu boards for restaurants, cafés and QSRs across Ireland.", priority: "0.9", changefreq: "monthly" },
 ];
 
 // Canonical URL targets known to the site from the wp-mirror — every URL
