@@ -8,6 +8,11 @@ Format inspired by [keepachangelog.com](https://keepachangelog.com/en/1.1.0/); n
 
 ## [Unreleased]
 
+### Added — 2026-07-13 — /digital-signage landing page (SEO plan Priority 1a)
+
+First page from `docs/SEO-CONTENT-PLAN.md` (the Google Ads session handoff). `/digital-signage` was a 404 that the biggest ad group ("digital signage ireland" etc.) was landing on the homepage — dragging Quality Score. New React route `src/routes/digital-signage.tsx`: brand hero with scale proof (2,500+ installs, own-brand Moytronix, 3-yr warranty, 32 counties), Trusted-by strip (SITE_META.notableClients), "what we supply" category grid, own-install-team differentiators, survey→design→install→support process, 5-question FAQ, dual CTAs (fast quote / free site survey). Emits Service + FAQPage + BreadcrumbList JSON-LD; unique title/meta/canonical. Added to `STATIC_PAGES` (sitemap). Deleted the orphaned scaffold `src/content/pages/digital-signage.mdx` (no route rendered it; it only duplicated the URL into the sitemap + /api/pages.json). Next: `/digital-menu-boards`, then ping the ads session to repoint the ad group's final URL.
+
+
 ### Fixed — 2026-07-13 — Lead emails named "beta.interactivedisplays.ie" post-cutover
 
 Contact-form notification emails (and the /api/email-test subject) had "beta.interactivedisplays.ie" hardcoded in `formatLeadEmail`, so leads landing in sales@ still referenced the beta host after production cutover. Now derived from `SITE_URL` (→ `interactivedisplays.ie` in prod). Also flipped the `start-node.mjs` `SITE_URL` fallback default from the beta host to `https://interactivedisplays.ie` to match the React routes' default (only relevant if `VITE_PUBLIC_SITE_URL` is ever unset — it's set on the host). The two remaining "beta" mentions are REDIRECT_TO_HOST comments describing the beta→prod forward, left intact.
