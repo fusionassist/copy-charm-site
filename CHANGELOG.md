@@ -8,6 +8,16 @@ Format inspired by [keepachangelog.com](https://keepachangelog.com/en/1.1.0/); n
 
 ## [Unreleased]
 
+### Fixed — 2026-07-13 — Internal-link + index the new landing pages; in-stock sections
+
+The Google Ads session found `/digital-signage` and `/digital-menu-boards` weren't indexed — nothing linked to them internally (sitemap alone is slow discovery). Fixes:
+- Both added to the React nav **Screen Solutions** dropdown.
+- `rewriteMirrorHtml` injects a sitewide **"Popular"** internal-link strip before the footer on every mirror page (the most-crawled surface) → Google discovers + weights both routes.
+- Menu-boards page now uses the **"menu screens" / "digital menu screens"** variant (Gerry's test search "digital menu screens") in an H2, hero and trusted-by line.
+- **"In stock now — fast install"** section on both pages for this week's push: 55″ freestanding units + LCD menu screens, with a "check stock & book install" CTA.
+- Still outstanding (Gerry action): **GSC → Request Indexing** for both URLs, and GSC property setup for interactivedisplays.ie if not done (no verification meta present). The old ranking menu pages (`/food-business-digital-menu-board/`, `/product/network-menu-boards/`) are intentionally left live (they carry current rankings) and now link forward to the new page via the strip.
+
+
 ### Added — 2026-07-13 — /digital-signage landing page (SEO plan Priority 1a)
 
 First page from `docs/SEO-CONTENT-PLAN.md` (the Google Ads session handoff). `/digital-signage` was a 404 that the biggest ad group ("digital signage ireland" etc.) was landing on the homepage — dragging Quality Score. New React route `src/routes/digital-signage.tsx`: brand hero with scale proof (2,500+ installs, own-brand Moytronix, 3-yr warranty, 32 counties), Trusted-by strip (SITE_META.notableClients), "what we supply" category grid, own-install-team differentiators, survey→design→install→support process, 5-question FAQ, dual CTAs (fast quote / free site survey). Emits Service + FAQPage + BreadcrumbList JSON-LD; unique title/meta/canonical. Added to `STATIC_PAGES` (sitemap). Deleted the orphaned scaffold `src/content/pages/digital-signage.mdx` (no route rendered it; it only duplicated the URL into the sitemap + /api/pages.json). Next: `/digital-menu-boards`, then ping the ads session to repoint the ad group's final URL.
