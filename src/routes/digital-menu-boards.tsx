@@ -122,8 +122,8 @@ function DigitalMenuBoardsPage() {
           </div>
           <div className="relative">
             <img
-              src="/images/screens/category-self-ordering.jpg"
-              alt="Digital menu boards installed above a restaurant counter in Ireland by Interactive Displays Ireland"
+              src="/images/screens/menu-screens-install-3.jpg"
+              alt="Digital menu screens installed above the deli counter at Centra Stewardstown by Interactive Displays Ireland"
               width={800}
               height={600}
               className="w-full rounded-2xl border border-white/10 object-cover shadow-2xl shadow-brand-cyan/10"
@@ -206,11 +206,15 @@ function DigitalMenuBoardsPage() {
             ))}
           </div>
           <p className="mt-8 text-center text-sm text-muted-foreground">
-            See our all-in-one{" "}
-            <a href="/product/android-network-display" className="font-medium text-brand-blue underline underline-offset-2 hover:text-brand-navy">
-              Moytronix Professional Android displays
+            See the{" "}
+            <a href="/product/network-menu-boards" className="font-medium text-brand-blue underline underline-offset-2 hover:text-brand-navy">
+              digital menu screens we install
             </a>{" "}
-            — the panels we fit as menu boards.
+            — 43&Prime; &amp; 32&Prime; commercial panels, in stock now — or the underlying{" "}
+            <a href="/product/android-network-display" className="font-medium text-brand-blue underline underline-offset-2 hover:text-brand-navy">
+              Moytronix Android display
+            </a>{" "}
+            spec.
           </p>
         </div>
       </section>

@@ -172,7 +172,7 @@ const MIRROR_PAGES = [
   // product page (auto-added to the sitemap by the products loader).
   "/product/dual-sided-standing-totem/",
   "/product/slim-standing-totem/",
-  "/product/network-menu-boards/",
+  // "/product/network-menu-boards/" removed 2026-07-13 — now an MDX product (Digital Menu Screens).
   "/product/pos-advertising-display/",
   "/product/outdoor-self-service-kiosk-2/",
   "/product/self-service-kiosk/",
@@ -323,6 +323,8 @@ function resolveRedirect(pathname, search) {
     "/product/moy-43ds60/": "/product/android-network-display",
     "/product/moy-32ds60":  "/product/android-network-display",
     "/product/moy-32ds60/": "/product/android-network-display",
+    // Digital Menu Screens React product page took over this legacy URL.
+    "/product/network-menu-boards/": "/product/network-menu-boards",
   };
   if (androidConsolidation[pathname]) {
     return { target: androidConsolidation[pathname], status: 301 };
@@ -418,6 +420,10 @@ const MIRROR_EXCLUDE = new Set([
   // trailing-slash form 301s to this canonical no-slash form (see
   // resolveRedirect). Bypasses the now-stale mirror snapshot.
   "/product/android-network-display",
+  // Digital Menu Screens — React product page took over the legacy
+  // /product/network-menu-boards URL (2026-07-13). Trailing-slash 301s
+  // to canonical no-slash (resolveRedirect).
+  "/product/network-menu-boards",
   "/llms.txt",
   "/llms-full.txt",
   "/robots.txt",
@@ -730,6 +736,10 @@ function rewriteMirrorHtml(html) {
   //     rename). The href /product/android-network-display/ is left as-is;
   //     it 301s to the new combined React product page.
   out = out.replace(/Android Network Displays?/g, "Professional Displays Android");
+  // Rename the mirror nav's "Network Menu Boards" item → "Digital Menu
+  // Screens" (2026-07-13). The href /product/network-menu-boards/ 301s to
+  // the new React product page.
+  out = out.replace(/Network Menu Boards?/g, "Digital Menu Screens");
   // 1e. Sitewide internal links to the new React landing pages, injected
   //     just before the footer on every mirror page. The mirror pages are
   //     the most-crawled surface, so this is how Google discovers + weights
