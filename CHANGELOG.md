@@ -8,6 +8,11 @@ Format inspired by [keepachangelog.com](https://keepachangelog.com/en/1.1.0/); n
 
 ## [Unreleased]
 
+### Added — 2026-07-13 — /product/network-menu-boards rebuilt as "Digital Menu Screens"
+
+This-week push (ads driving menu-screen traffic). The legacy mirror product page at `/product/network-menu-boards/` is replaced by a React MDX product page titled **"Digital Menu Screens"**, taking over the same (indexed, in-nav) URL — same takeover pattern as `android-network-display`. Same Moytronix 43″/32″ Android + ScreenFusion hardware (variants comparison table; **not** BrightSign), menu-angled copy, in-stock/fast-install messaging, and **real IDI install photos** (Centra, Supermac's — optimised from Dropbox into `public/images/screens/menu-screens-install-1..4.jpg`). Mirror nav "Network Menu Boards" → "Digital Menu Screens" via `rewriteMirrorHtml`. Trailing-slash 301; stale MIRROR_PAGES sitemap entry removed. Cross-linked with the `/digital-menu-boards` landing page (whose hero is now the real Centra install shot). Old page's rankings preserved (URL kept).
+
+
 ### Fixed — 2026-07-13 — Internal-link + index the new landing pages; in-stock sections
 
 The Google Ads session found `/digital-signage` and `/digital-menu-boards` weren't indexed — nothing linked to them internally (sitemap alone is slow discovery). Fixes:
