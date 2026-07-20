@@ -5,30 +5,79 @@ import { Button } from "@/components/ui/button";
 
 // Top-level nav for TanStack-rendered routes. Mirrors the live WP/Elementor
 // site menu (Home · Screen Solutions · Services · Visitor Assist · Careers)
-// so the React pages match the rest of the site. Mirror-served destinations
-// use plain <a> for a full page load (TanStack Router would otherwise try to
-// client-navigate a mirror URL and 404 internally before falling through).
+// so the React pages match the rest of the site. Screen Solutions is a wide
+// mega-menu panel (grouped columns + a featured image tile) like the mirror
+// nav's product mega-menu. Mirror-served destinations use plain <a> for a
+// full page load (TanStack Router would otherwise try to client-navigate a
+// mirror URL and 404 internally before falling through).
 
 type MenuItem = { label: string; href: string };
-type MenuGroup = { label: string; href: string; items?: MenuItem[] };
+type MegaColumn = { heading: string; items: MenuItem[] };
+type MegaFeatured = { image: string; eyebrow: string; title: string; body: string; href: string };
+type MenuGroup = {
+  label: string;
+  href: string;
+  items?: MenuItem[]; // simple dropdown + mobile list
+  mega?: { columns: MegaColumn[]; featured: MegaFeatured };
+};
+
+const SCREEN_SOLUTIONS_ITEMS: MenuItem[] = [
+  { label: "Digital Signage", href: "/digital-signage" },
+  { label: "Digital Menu Boards", href: "/digital-menu-boards" },
+  { label: "Digital Menu Screens", href: "/product/network-menu-boards" },
+  { label: "Interactive Displays", href: "/product-category/interactive/" },
+  { label: "Touchscreens & Kiosks", href: "/product-category/touchscreen/" },
+  { label: "Outdoor Displays", href: "/product-category/outdoor/" },
+  { label: "Indoor Displays", href: "/product-category/indoor/" },
+  { label: "LED Video Walls", href: "/product-category/led/" },
+  { label: "Self-Ordering Kiosks", href: "/product-category/self-ordering/" },
+  { label: "High-Brightness Displays", href: "/product-category/high-brightness/" },
+  { label: "Professional Displays — Android", href: "/product/android-network-display" },
+];
 
 const MENU: MenuGroup[] = [
   { label: "Home", href: "/" },
   {
     label: "Screen Solutions",
     href: "/screen-solutions/",
-    items: [
-      { label: "Digital Signage", href: "/digital-signage" },
-      { label: "Digital Menu Boards", href: "/digital-menu-boards" },
-      { label: "Interactive Displays", href: "/product-category/interactive/" },
-      { label: "Touchscreens & Kiosks", href: "/product-category/touchscreen/" },
-      { label: "Outdoor Displays", href: "/product-category/outdoor/" },
-      { label: "Indoor Displays", href: "/product-category/indoor/" },
-      { label: "LED Video Walls", href: "/product-category/led/" },
-      { label: "Self-Ordering Kiosks", href: "/product-category/self-ordering/" },
-      { label: "High-Brightness Displays", href: "/product-category/high-brightness/" },
-      { label: "Professional Displays — Android", href: "/product/android-network-display" },
-    ],
+    items: SCREEN_SOLUTIONS_ITEMS,
+    mega: {
+      columns: [
+        {
+          heading: "Popular",
+          items: [
+            { label: "Digital Signage", href: "/digital-signage" },
+            { label: "Digital Menu Boards", href: "/digital-menu-boards" },
+            { label: "Digital Menu Screens", href: "/product/network-menu-boards" },
+          ],
+        },
+        {
+          heading: "By display type",
+          items: [
+            { label: "Interactive Displays", href: "/product-category/interactive/" },
+            { label: "Touchscreens & Kiosks", href: "/product-category/touchscreen/" },
+            { label: "Outdoor Displays", href: "/product-category/outdoor/" },
+            { label: "Indoor Displays", href: "/product-category/indoor/" },
+          ],
+        },
+        {
+          heading: "More",
+          items: [
+            { label: "LED Video Walls", href: "/product-category/led/" },
+            { label: "Self-Ordering Kiosks", href: "/product-category/self-ordering/" },
+            { label: "High-Brightness Displays", href: "/product-category/high-brightness/" },
+            { label: "Professional Displays — Android", href: "/product/android-network-display" },
+          ],
+        },
+      ],
+      featured: {
+        image: "/images/screens/menu-screens-install-3.jpg",
+        eyebrow: "In stock now",
+        title: "Digital Menu Screens",
+        body: "43″ & 32″ commercial menu screens — fast nationwide install.",
+        href: "/product/network-menu-boards",
+      },
+    },
   },
   {
     label: "Services",
@@ -54,6 +103,17 @@ const MENU: MenuGroup[] = [
   },
   { label: "Careers", href: "/careers/" },
 ];
+
+const Chevron = () => (
+  <svg
+    className="size-3 opacity-60 transition-transform group-hover:rotate-180"
+    viewBox="0 0 12 12"
+    fill="none"
+    aria-hidden="true"
+  >
+    <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
 
 export function Nav() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -81,24 +141,56 @@ export function Nav() {
                   className="inline-flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium text-foreground/80 transition-colors hover:bg-accent hover:text-foreground"
                 >
                   {group.label}
-                  {group.items && (
-                    <svg
-                      className="size-3 opacity-60 transition-transform group-hover:rotate-180"
-                      viewBox="0 0 12 12"
-                      fill="none"
-                      aria-hidden="true"
-                    >
-                      <path
-                        d="M3 4.5L6 7.5L9 4.5"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  )}
+                  {(group.items || group.mega) && <Chevron />}
                 </a>
-                {group.items && (
+
+                {/* Mega-menu panel */}
+                {group.mega && (
+                  <div className="invisible absolute left-0 top-full z-50 pt-2 opacity-0 transition-all group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
+                    <div className="grid w-[720px] max-w-[calc(100vw-2rem)] grid-cols-4 overflow-hidden rounded-xl border border-border bg-popover shadow-xl">
+                      <div className="col-span-3 grid grid-cols-3 gap-x-3 gap-y-1 p-5">
+                        {group.mega.columns.map((col) => (
+                          <div key={col.heading}>
+                            <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-wide text-brand-cyan">
+                              {col.heading}
+                            </p>
+                            <ul className="space-y-0.5">
+                              {col.items.map((item) => (
+                                <li key={item.href}>
+                                  <a
+                                    href={item.href}
+                                    className="block rounded px-2 py-1.5 text-sm text-foreground/80 transition-colors hover:bg-accent hover:text-foreground"
+                                  >
+                                    {item.label}
+                                  </a>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ))}
+                      </div>
+                      <a href={group.mega.featured.href} className="relative col-span-1 block overflow-hidden bg-brand-navy text-white">
+                        <img
+                          src={group.mega.featured.image}
+                          alt=""
+                          aria-hidden="true"
+                          className="absolute inset-0 size-full object-cover opacity-35"
+                        />
+                        <div className="relative flex h-full flex-col justify-end p-4">
+                          <span className="text-[10px] font-bold uppercase tracking-wide text-brand-spark">
+                            {group.mega.featured.eyebrow}
+                          </span>
+                          <span className="mt-1 text-sm font-bold leading-tight">{group.mega.featured.title}</span>
+                          <span className="mt-1 text-xs leading-snug text-white/80">{group.mega.featured.body}</span>
+                          <span className="mt-2 text-xs font-semibold text-brand-spark">View →</span>
+                        </div>
+                      </a>
+                    </div>
+                  </div>
+                )}
+
+                {/* Simple dropdown */}
+                {group.items && !group.mega && (
                   <div className="invisible absolute left-0 top-full z-50 min-w-64 pt-2 opacity-0 transition-all group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
                     <ul className="overflow-hidden rounded-xl border border-border bg-popover py-2 shadow-lg">
                       {group.items.map((item) => (
@@ -155,10 +247,7 @@ export function Nav() {
                   <ul className="pb-1 pl-3">
                     {group.items.map((item) => (
                       <li key={item.href}>
-                        <a
-                          href={item.href}
-                          className="block py-1.5 text-sm text-foreground/70 hover:text-foreground"
-                        >
+                        <a href={item.href} className="block py-1.5 text-sm text-foreground/70 hover:text-foreground">
                           {item.label}
                         </a>
                       </li>
