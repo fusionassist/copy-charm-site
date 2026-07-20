@@ -167,6 +167,34 @@ function DigitalSignagePage() {
         </div>
       </section>
 
+      {/* ── IN STOCK NOW ─────────────────────────────────────────────────── */}
+      <section className="border-b border-border bg-brand-cyan/10 py-12">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6">
+          <div className="rounded-2xl border border-brand-cyan/30 bg-background p-6 sm:p-8">
+            <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="inline-flex items-center gap-2 rounded-full bg-brand-cyan/15 px-3 py-1 text-xs font-bold uppercase tracking-wide text-brand-blue">
+                  In stock now · fast install
+                </p>
+                <h2 className="mt-3 text-2xl font-bold tracking-tight">
+                  55&Prime; freestanding display units — ready to install
+                </h2>
+                <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+                  We're holding stock of 55-inch freestanding digital signage units and commercial LCD
+                  menu screens right now — survey, supply and install within days, not weeks. Perfect for
+                  a launch, refit or a busy season when you can't wait on a long lead time.
+                </p>
+              </div>
+              <div className="shrink-0">
+                <Button asChild size="lg" className="w-full sm:w-auto">
+                  <a href="/contact-us">Check stock &amp; book install</a>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── WHAT WE SUPPLY ───────────────────────────────────────────────── */}
       <section className="bg-background py-16 sm:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">

@@ -114,7 +114,7 @@ function DigitalMenuBoardsPage() {
               </Button>
             </div>
             <p className="mt-8 text-sm text-white/70">
-              Trusted by Irish hospitality &amp; QSR brands including{" "}
+              Digital menu boards &amp; menu screens trusted by Irish hospitality &amp; QSR brands including{" "}
               <span className="font-semibold text-white">Supermac's</span>,{" "}
               <span className="font-semibold text-white">SPAR</span> and{" "}
               <span className="font-semibold text-white">LONDIS</span>.
@@ -130,6 +130,35 @@ function DigitalMenuBoardsPage() {
               loading="eager"
               fetchPriority="high"
             />
+          </div>
+        </div>
+      </section>
+
+      {/* ── IN STOCK NOW ─────────────────────────────────────────────────── */}
+      <section className="border-b border-border bg-brand-cyan/10 py-12">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6">
+          <div className="rounded-2xl border border-brand-cyan/30 bg-background p-6 sm:p-8">
+            <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="inline-flex items-center gap-2 rounded-full bg-brand-cyan/15 px-3 py-1 text-xs font-bold uppercase tracking-wide text-brand-blue">
+                  In stock now · fast install
+                </p>
+                <h2 className="mt-3 text-2xl font-bold tracking-tight">
+                  LCD menu screens &amp; 55&Prime; freestanding units — ready to install
+                </h2>
+                <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+                  We're holding stock of commercial LCD digital menu screens and 55-inch freestanding
+                  display units right now — so we can survey, supply and install within days, not weeks.
+                  Ideal if you need menu boards or digital menu screens up and running for a launch,
+                  refit or busy season.
+                </p>
+              </div>
+              <div className="shrink-0">
+                <Button asChild size="lg" className="w-full sm:w-auto">
+                  <a href="/contact-us">Check stock &amp; book install</a>
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       </section>

@@ -730,6 +730,22 @@ function rewriteMirrorHtml(html) {
   //     rename). The href /product/android-network-display/ is left as-is;
   //     it 301s to the new combined React product page.
   out = out.replace(/Android Network Displays?/g, "Professional Displays Android");
+  // 1e. Sitewide internal links to the new React landing pages, injected
+  //     just before the footer on every mirror page. The mirror pages are
+  //     the most-crawled surface, so this is how Google discovers + weights
+  //     /digital-signage and /digital-menu-boards (added 2026-07-13 after
+  //     GSC showed neither indexed — nothing linked to them internally).
+  if (out.includes("<footer")) {
+    const relatedStrip =
+      `<div style="background:#F4F7FB;border-top:1px solid #E2E8F2;padding:16px 20px;text-align:center;` +
+      `font-family:Inter,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;font-size:14px;line-height:1.6;">` +
+      `<span style="color:#5A6B85;font-weight:600;">Popular:</span> ` +
+      `<a href="/digital-signage" style="color:#003E9E;font-weight:600;text-decoration:none;margin:0 8px;">Digital Signage Ireland</a>` +
+      `<span style="color:#C5CEDE;">·</span> ` +
+      `<a href="/digital-menu-boards" style="color:#003E9E;font-weight:600;text-decoration:none;margin:0 8px;">Digital Menu Boards &amp; Menu Screens</a>` +
+      `</div>`;
+    out = out.replace(/<footer\b/i, relatedStrip + "<footer");
+  }
   // 1b. WordPress + Elementor served the homepage template at
   // /elementor-6/index.html and link rewrites in the mirror still point
   // every nav-to-home / logo-click at it (~150 mirror files). The URL is

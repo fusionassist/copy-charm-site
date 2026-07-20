@@ -18,6 +18,8 @@ const MENU: MenuGroup[] = [
     label: "Screen Solutions",
     href: "/screen-solutions/",
     items: [
+      { label: "Digital Signage", href: "/digital-signage" },
+      { label: "Digital Menu Boards", href: "/digital-menu-boards" },
       { label: "Interactive Displays", href: "/product-category/interactive/" },
       { label: "Touchscreens & Kiosks", href: "/product-category/touchscreen/" },
       { label: "Outdoor Displays", href: "/product-category/outdoor/" },
