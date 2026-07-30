@@ -30,6 +30,7 @@ const SCREEN_SOLUTIONS_ITEMS: MenuItem[] = [
   { label: "Outdoor Displays", href: "/product-category/outdoor/" },
   { label: "Indoor Displays", href: "/product-category/indoor/" },
   { label: "LED Video Walls", href: "/product-category/led/" },
+  { label: "GAA LED Scoreboards", href: "/product/gaa-led-scoreboards" },
   { label: "Self-Ordering Kiosks", href: "/product-category/self-ordering/" },
   { label: "High-Brightness Displays", href: "/product-category/high-brightness/" },
   { label: "Professional Displays — Android", href: "/product/android-network-display" },
@@ -64,6 +65,7 @@ const MENU: MenuGroup[] = [
           heading: "More",
           items: [
             { label: "LED Video Walls", href: "/product-category/led/" },
+            { label: "GAA LED Scoreboards", href: "/product/gaa-led-scoreboards" },
             { label: "Self-Ordering Kiosks", href: "/product-category/self-ordering/" },
             { label: "High-Brightness Displays", href: "/product-category/high-brightness/" },
             { label: "Professional Displays — Android", href: "/product/android-network-display" },

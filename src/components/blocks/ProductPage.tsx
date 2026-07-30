@@ -66,6 +66,18 @@ export function ProductPage({
     ? product.heroImage
     : `${baseUrl}${product.heroImage}`;
 
+  // Brand display name from the frontmatter slug (products aren't all
+  // Moytronix — e.g. CluScore scoreboards).
+  const BRAND_NAMES: Record<string, string> = {
+    moytronix: "Moytronix",
+    cluscore: "CluScore",
+    promethean: "Promethean",
+    vestel: "Vestel",
+  };
+  const brandName =
+    BRAND_NAMES[product.brand] ??
+    product.brand.replace(/(^|[\s-])\S/g, (c) => c.toUpperCase());
+
   const specEntries = Object.entries(product.specs ?? {});
   const heroSpecs = specEntries.slice(0, 6);
 
@@ -92,7 +104,7 @@ export function ProductPage({
     description: product.metaDescription ?? product.shortDescription,
     image: heroAbs,
     category: product.category,
-    brand: { "@type": "Brand", name: "Moytronix" },
+    brand: { "@type": "Brand", name: brandName },
     manufacturer: { "@id": `${baseUrl}/#organization` },
     url: canonical,
     offers: {
@@ -146,7 +158,7 @@ export function ProductPage({
               <span className="text-white/90">{product.title}</span>
             </nav>
             <p className="text-sm font-semibold uppercase tracking-widest text-brand-spark">
-              Moytronix · {product.category} display
+              {brandName} · {product.category}
             </p>
             <h1 className="mt-3 text-3xl font-bold leading-tight sm:text-4xl lg:text-5xl">
               {product.title}

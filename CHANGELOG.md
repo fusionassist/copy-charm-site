@@ -8,6 +8,11 @@ Format inspired by [keepachangelog.com](https://keepachangelog.com/en/1.1.0/); n
 
 ## [Unreleased]
 
+### Added — 2026-07-22 — CluScore GAA LED Scoreboards product page + nav
+
+New product `/product/gaa-led-scoreboards` for the CluScore GAA scoreboard line (category `led`, brand `cluscore`) — the Irish-assembled LED sports scoreboard installed at Moylagh GAA. Real install photos (from cluscore.ie), GAA-scoring/clock/sponsor-panel/phone-control copy, FAQ + Product/Breadcrumb/FAQ JSON-LD, link out to cluscore.ie. Added to the Screen Solutions mega-menu (under LED, next to LED Video Walls) + the mobile list. `ProductPage` now derives the brand display name from `frontmatter.brand` (was hardcoded "Moytronix") via a slug→name map, so CluScore — and any future non-Moytronix product — brands correctly in the hero eyebrow and Product schema.
+
+
 ### Added — 2026-07-13 — /product/network-menu-boards rebuilt as "Digital Menu Screens"
 
 This-week push (ads driving menu-screen traffic). The legacy mirror product page at `/product/network-menu-boards/` is replaced by a React MDX product page titled **"Digital Menu Screens"**, taking over the same (indexed, in-nav) URL — same takeover pattern as `android-network-display`. Same Moytronix 43″/32″ Android + ScreenFusion hardware (variants comparison table; **not** BrightSign), menu-angled copy, in-stock/fast-install messaging, and **real IDI install photos** (Centra, Supermac's — optimised from Dropbox into `public/images/screens/menu-screens-install-1..4.jpg`). Mirror nav "Network Menu Boards" → "Digital Menu Screens" via `rewriteMirrorHtml`. Trailing-slash 301; stale MIRROR_PAGES sitemap entry removed. Cross-linked with the `/digital-menu-boards` landing page (whose hero is now the real Centra install shot). Old page's rankings preserved (URL kept).
