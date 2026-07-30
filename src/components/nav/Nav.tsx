@@ -6,19 +6,18 @@ import { Button } from "@/components/ui/button";
 // Top-level nav for TanStack-rendered routes. Mirrors the live WP/Elementor
 // site menu (Home · Screen Solutions · Services · Visitor Assist · Careers)
 // so the React pages match the rest of the site. Screen Solutions is a wide
-// mega-menu panel (grouped columns + a featured image tile) like the mirror
-// nav's product mega-menu. Mirror-served destinations use plain <a> for a
+// image-tile mega-menu panel (like the mirror nav's WP/Elementor product
+// mega-menu). Mirror-served destinations use plain <a> for a
 // full page load (TanStack Router would otherwise try to client-navigate a
 // mirror URL and 404 internally before falling through).
 
 type MenuItem = { label: string; href: string };
-type MegaColumn = { heading: string; items: MenuItem[] };
-type MegaFeatured = { image: string; eyebrow: string; title: string; body: string; href: string };
+type MegaTile = { label: string; href: string; image: string };
 type MenuGroup = {
   label: string;
   href: string;
   items?: MenuItem[]; // simple dropdown + mobile list
-  mega?: { columns: MegaColumn[]; featured: MegaFeatured };
+  mega?: { tiles: MegaTile[] }; // desktop image-tile mega panel
 };
 
 const SCREEN_SOLUTIONS_ITEMS: MenuItem[] = [
@@ -43,42 +42,18 @@ const MENU: MenuGroup[] = [
     href: "/screen-solutions/",
     items: SCREEN_SOLUTIONS_ITEMS,
     mega: {
-      columns: [
-        {
-          heading: "Popular",
-          items: [
-            { label: "Digital Signage", href: "/digital-signage" },
-            { label: "Digital Menu Boards", href: "/digital-menu-boards" },
-            { label: "Digital Menu Screens", href: "/product/network-menu-boards" },
-          ],
-        },
-        {
-          heading: "By display type",
-          items: [
-            { label: "Interactive Displays", href: "/product-category/interactive/" },
-            { label: "Touchscreens & Kiosks", href: "/product-category/touchscreen/" },
-            { label: "Outdoor Displays", href: "/product-category/outdoor/" },
-            { label: "Indoor Displays", href: "/product-category/indoor/" },
-          ],
-        },
-        {
-          heading: "More",
-          items: [
-            { label: "LED Video Walls", href: "/product-category/led/" },
-            { label: "GAA LED Scoreboards", href: "/product/gaa-led-scoreboards" },
-            { label: "Self-Ordering Kiosks", href: "/product-category/self-ordering/" },
-            { label: "High-Brightness Displays", href: "/product-category/high-brightness/" },
-            { label: "Professional Displays — Android", href: "/product/android-network-display" },
-          ],
-        },
+      tiles: [
+        { label: "Digital Signage", href: "/digital-signage", image: "/images/screens/moy-ds60-portrait.jpg" },
+        { label: "Digital Menu Screens", href: "/product/network-menu-boards", image: "/images/screens/menu-screens-install-3.jpg" },
+        { label: "LED Video Walls", href: "/product-category/led/", image: "/images/screens/category-led.jpg" },
+        { label: "GAA LED Scoreboards", href: "/product/gaa-led-scoreboards", image: "/images/screens/cluscore-hero.jpg" },
+        { label: "Interactive Displays", href: "/product-category/interactive/", image: "/images/screens/category-interactive.jpg" },
+        { label: "Touchscreens & Kiosks", href: "/product-category/touchscreen/", image: "/images/screens/category-touchscreen.jpg" },
+        { label: "Outdoor Displays", href: "/product-category/outdoor/", image: "/images/screens/category-outdoor.jpg" },
+        { label: "Indoor Displays", href: "/product-category/indoor/", image: "/images/screens/category-indoor.jpg" },
+        { label: "Self-Ordering Kiosks", href: "/product-category/self-ordering/", image: "/images/screens/category-self-ordering.jpg" },
+        { label: "Professional Displays — Android", href: "/product/android-network-display", image: "/images/screens/moy-ds60-hero.jpg" },
       ],
-      featured: {
-        image: "/images/screens/menu-screens-install-3.jpg",
-        eyebrow: "In stock now",
-        title: "Digital Menu Screens",
-        body: "43″ & 32″ commercial menu screens — fast nationwide install.",
-        href: "/product/network-menu-boards",
-      },
     },
   },
   {
@@ -146,47 +121,32 @@ export function Nav() {
                   {(group.items || group.mega) && <Chevron />}
                 </a>
 
-                {/* Mega-menu panel */}
+                {/* Mega-menu panel — image tiles (matches the WP mega menu) */}
                 {group.mega && (
-                  <div className="invisible absolute left-0 top-full z-50 pt-2 opacity-0 transition-all group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
-                    <div className="grid w-[720px] max-w-[calc(100vw-2rem)] grid-cols-4 overflow-hidden rounded-xl border border-border bg-popover shadow-xl">
-                      <div className="col-span-3 grid grid-cols-3 gap-x-3 gap-y-1 p-5">
-                        {group.mega.columns.map((col) => (
-                          <div key={col.heading}>
-                            <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-wide text-brand-cyan">
-                              {col.heading}
-                            </p>
-                            <ul className="space-y-0.5">
-                              {col.items.map((item) => (
-                                <li key={item.href}>
-                                  <a
-                                    href={item.href}
-                                    className="block rounded px-2 py-1.5 text-sm text-foreground/80 transition-colors hover:bg-accent hover:text-foreground"
-                                  >
-                                    {item.label}
-                                  </a>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
+                  <div className="invisible absolute left-1/2 top-full z-50 -translate-x-1/2 pt-2 opacity-0 transition-all group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
+                    <div className="w-[820px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-border bg-popover p-3 shadow-xl">
+                      <ul className="grid grid-cols-5 gap-2.5">
+                        {group.mega.tiles.map((tile) => (
+                          <li key={tile.href}>
+                            <a
+                              href={tile.href}
+                              className="group/tile relative block aspect-[4/3] overflow-hidden rounded-lg ring-1 ring-black/5"
+                            >
+                              <img
+                                src={tile.image}
+                                alt=""
+                                aria-hidden="true"
+                                loading="lazy"
+                                className="absolute inset-0 size-full object-cover transition duration-300 group-hover/tile:scale-110"
+                              />
+                              <span className="absolute inset-0 bg-gradient-to-t from-brand-navy/95 via-brand-navy/40 to-brand-navy/5" />
+                              <span className="absolute inset-x-0 bottom-0 p-2 text-xs font-semibold leading-tight text-white drop-shadow">
+                                {tile.label}
+                              </span>
+                            </a>
+                          </li>
                         ))}
-                      </div>
-                      <a href={group.mega.featured.href} className="relative col-span-1 block overflow-hidden bg-brand-navy text-white">
-                        <img
-                          src={group.mega.featured.image}
-                          alt=""
-                          aria-hidden="true"
-                          className="absolute inset-0 size-full object-cover opacity-35"
-                        />
-                        <div className="relative flex h-full flex-col justify-end p-4">
-                          <span className="text-[10px] font-bold uppercase tracking-wide text-brand-spark">
-                            {group.mega.featured.eyebrow}
-                          </span>
-                          <span className="mt-1 text-sm font-bold leading-tight">{group.mega.featured.title}</span>
-                          <span className="mt-1 text-xs leading-snug text-white/80">{group.mega.featured.body}</span>
-                          <span className="mt-2 text-xs font-semibold text-brand-spark">View →</span>
-                        </div>
-                      </a>
+                      </ul>
                     </div>
                   </div>
                 )}
