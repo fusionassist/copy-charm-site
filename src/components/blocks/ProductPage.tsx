@@ -184,6 +184,18 @@ export function ProductPage({
               <Button asChild size="lg" className="bg-white text-brand-navy hover:bg-white/90">
                 <Link to="/contact-us">Get a quote</Link>
               </Button>
+              {product.externalLink && (
+                <Button
+                  asChild
+                  size="lg"
+                  variant="outline"
+                  className="border-white/30 bg-transparent text-white hover:bg-white/10 hover:text-white"
+                >
+                  <a href={product.externalLink.href} target="_blank" rel="noopener noreferrer">
+                    {product.externalLink.label}
+                  </a>
+                </Button>
+              )}
               {product.brochures?.[0] && (
                 <Button
                   asChild

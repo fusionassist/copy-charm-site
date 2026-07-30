@@ -32,6 +32,9 @@ export type ProductFrontmatter = {
   // side-by-side comparison spec table in addition to the shared `specs`
   // highlights shown in the hero. Used for multi-size product lines.
   variants?: Array<{ name: string; specs: Record<string, string | number> }>;
+  // Optional prominent external link rendered as a hero button (e.g. a
+  // dedicated product microsite like cluscore.ie).
+  externalLink?: { label: string; href: string };
   brochures?: Array<{ label: string; href: string }>;
   relatedProducts?: string[];
   faqs?: Array<{ q: string; a: string }>;
