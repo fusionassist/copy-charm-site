@@ -740,6 +740,26 @@ function rewriteMirrorHtml(html) {
   // Screens" (2026-07-13). The href /product/network-menu-boards/ 301s to
   // the new React product page.
   out = out.replace(/Network Menu Boards?/g, "Digital Menu Screens");
+  // Inject a "GAA LED Scoreboards" (CluScore) tile into the mega-menu's
+  // "LED Solutions" tab, after the last LED tile (LED Box Signage). Clones
+  // that tile's element classes so it inherits the same size/styling.
+  // (2026-07-22 — the mega menu is WP/Elementor promo boxes; the React nav
+  // change didn't reach it.)
+  if (out.includes("LED Box Signage") && !out.includes("/product/gaa-led-scoreboards")) {
+    const cluscoreTile =
+      '<div class="elementor-element elementor-element-365e0a7 elementor-widget__width-initial wpr-promo-box-style-cover elementor-widget elementor-widget-wpr-promo-box" data-id="365e0a7" data-element_type="widget" data-e-type="widget" data-widget_type="wpr-promo-box.default">' +
+      '<div class="wpr-promo-box wpr-animation-wrap">' +
+      '<a class="wpr-promo-box-link" href="/product/gaa-led-scoreboards"></a>' +
+      '<div class="wpr-promo-box-image">' +
+      '<div class="wpr-promo-box-bg-image wpr-bg-anim-zoom-in wpr-anim-timing-ease-default lazy" style="background-image:url(\'/images/screens/cluscore-hero.jpg\')" data-bg="/images/screens/cluscore-hero.jpg"></div>' +
+      '<div class="wpr-promo-box-bg-overlay wpr-border-anim-none"></div></div>' +
+      '<div class="wpr-promo-box-content"><div class="wpr-promo-box-icon"></div>' +
+      '<h3 class="wpr-promo-box-title"><span>GAA LED Scoreboards</span></h3></div></div></div>';
+    out = out.replace(
+      /(<h3 class="wpr-promo-box-title"><span>LED Box Signage<\/span><\/h3>\s*<\/div>\s*<\/div>\s*<\/div>)/,
+      `$1${cluscoreTile}`,
+    );
+  }
   // 1e. Sitewide internal links to the new React landing pages, injected
   //     just before the footer on every mirror page. The mirror pages are
   //     the most-crawled surface, so this is how Google discovers + weights

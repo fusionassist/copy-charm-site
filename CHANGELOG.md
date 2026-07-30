@@ -8,6 +8,11 @@ Format inspired by [keepachangelog.com](https://keepachangelog.com/en/1.1.0/); n
 
 ## [Unreleased]
 
+### Added — 2026-07-22 — CluScore tile in the WP/Elementor mega-menu "LED Solutions"
+
+Follow-up to the CluScore product page: the main site's mega menu is the WordPress/Elementor promo-box grid (on all ~148 mirror pages), which the React-nav change didn't reach. `rewriteMirrorHtml` now injects a **"GAA LED Scoreboards"** promo-box tile into the **LED Solutions** tab, right after the last LED tile (LED Box Signage), cloning that tile's Elementor element classes so it inherits the same size/style. Background uses the real Moylagh install photo; links to `/product/gaa-led-scoreboards`. Guarded against double-injection.
+
+
 ### Added — 2026-07-22 — CluScore GAA LED Scoreboards product page + nav
 
 New product `/product/gaa-led-scoreboards` for the CluScore GAA scoreboard line (category `led`, brand `cluscore`) — the Irish-assembled LED sports scoreboard installed at Moylagh GAA. Real install photos (from cluscore.ie), GAA-scoring/clock/sponsor-panel/phone-control copy, FAQ + Product/Breadcrumb/FAQ JSON-LD, link out to cluscore.ie. Added to the Screen Solutions mega-menu (under LED, next to LED Video Walls) + the mobile list. `ProductPage` now derives the brand display name from `frontmatter.brand` (was hardcoded "Moytronix") via a slug→name map, so CluScore — and any future non-Moytronix product — brands correctly in the hero eyebrow and Product schema.
