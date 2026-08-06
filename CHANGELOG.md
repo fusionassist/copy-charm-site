@@ -8,6 +8,10 @@ Format inspired by [keepachangelog.com](https://keepachangelog.com/en/1.1.0/); n
 
 ## [Unreleased]
 
+### Added — 2026-08-06 — Cross-link + hreflang to the UK sister site (interactivedisplaysuk.com)
+
+Off-site SEO to accelerate organic authority for the newly-launched UK sister site. `rewriteMirrorHtml` now (a) injects a sitewide **"In the UK? Visit our sister site → Interactive Displays UK"** link into the pre-footer strip on every mirror page (followable link → passes authority + aids discovery), and (b) on the **homepage only** (production only, `!NOINDEX`) injects an **hreflang cluster** (`en-ie` → this site, `en-gb` → interactivedisplaysuk.com, `x-default` → this site) so Google serves the right brand per country and the two don't compete for UK searchers. Homepage-scoped because the sites aren't 1:1 (a bad sitewide mapping causes GSC hreflang errors). Reciprocated by matching tags on the UK homepage. `rewriteMirrorHtml` now takes `pathname` (passed from `tryServeMirror`).
+
 ### Added — 2026-07-22 — CluScore tile in the WP/Elementor mega-menu "LED Solutions"
 
 Follow-up to the CluScore product page: the main site's mega menu is the WordPress/Elementor promo-box grid (on all ~148 mirror pages), which the React-nav change didn't reach. `rewriteMirrorHtml` now injects a **"GAA LED Scoreboards"** promo-box tile into the **LED Solutions** tab, right after the last LED tile (LED Box Signage), cloning that tile's Elementor element classes so it inherits the same size/style. Background uses the real Moylagh install photo; links to `/product/gaa-led-scoreboards`. Guarded against double-injection.

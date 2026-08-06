@@ -688,7 +688,7 @@ const LEGACY_TRACKING_PATTERNS = [
   /<script\b[^>]*src=["'][^"']*connect\.facebook\.net[^"']*["'][^>]*>\s*<\/script>/gi,
 ];
 
-function rewriteMirrorHtml(html) {
+function rewriteMirrorHtml(html, pathname = "") {
   let out = html;
   // 1. Strip legacy Tawk.to (always — independent of Odoo config)
   for (const pattern of TAWK_PATTERNS) {
@@ -773,6 +773,8 @@ function rewriteMirrorHtml(html) {
       `<a href="/digital-signage" style="color:#003E9E;font-weight:600;text-decoration:none;margin:0 8px;">Digital Signage Ireland</a>` +
       `<span style="color:#C5CEDE;">·</span> ` +
       `<a href="/digital-menu-boards" style="color:#003E9E;font-weight:600;text-decoration:none;margin:0 8px;">Digital Menu Boards &amp; Menu Screens</a>` +
+      `<div style="margin-top:8px;font-size:13px;color:#5A6B85;">In the UK? Visit our sister site ` +
+      `<a href="https://interactivedisplaysuk.com/" rel="alternate" hreflang="en-gb" style="color:#003E9E;font-weight:600;text-decoration:none;">Interactive Displays UK</a></div>` +
       `</div>`;
     out = out.replace(/<footer\b/i, relatedStrip + "<footer");
   }
@@ -817,6 +819,19 @@ function rewriteMirrorHtml(html) {
     out = out.includes("</head>")
       ? out.replace("</head>", TRACKING_HEAD_SNIPPET + "</head>")
       : out;
+  }
+  // 3b. hreflang cluster on the homepage only (production only) — declares the
+  //     UK sister site interactivedisplaysuk.com as the en-GB regional variant
+  //     so Google serves the right brand per country and the two don't compete
+  //     for UK searchers. Homepage-scoped: the sites aren't 1:1, so only the
+  //     brand home is mapped (a bad sitewide mapping causes GSC hreflang errors).
+  //     Reciprocated by matching tags on the UK homepage. (2026-08-06)
+  if (!NOINDEX && (pathname === "/" || pathname === "/index.php") && out.includes("</head>")) {
+    const hreflang =
+      `<link rel="alternate" hreflang="en-ie" href="https://interactivedisplays.ie/"/>` +
+      `<link rel="alternate" hreflang="en-gb" href="https://interactivedisplaysuk.com/"/>` +
+      `<link rel="alternate" hreflang="x-default" href="https://interactivedisplays.ie/"/>`;
+    out = out.replace("</head>", hreflang + "</head>");
   }
   // 4. Tracking noscript fallbacks immediately AFTER <body> (per GTM
   //    + Meta Pixel spec; LinkedIn doesn't care)
@@ -1197,7 +1212,7 @@ async function tryServeMirror(request) {
     //   meta rewrite → inject Odoo chat
     const raw = await readFile(file, "utf8");
     const seoFixed = rewriteSeoTags(raw, url.pathname);
-    body = rewriteMirrorHtml(seoFixed);
+    body = rewriteMirrorHtml(seoFixed, url.pathname);
   } else {
     body = await readFile(file);
   }
