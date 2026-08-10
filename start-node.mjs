@@ -583,10 +583,20 @@ function buildTrackingSnippet() {
     parts.push(`<script>_linkedin_partner_id="${linkedin}";window._linkedin_data_partner_ids=window._linkedin_data_partner_ids||[];window._linkedin_data_partner_ids.push(_linkedin_partner_id);(function(l){if(!l){window.lintrk=function(a,b){window.lintrk.q.push([a,b])};window.lintrk.q=[]}var s=document.getElementsByTagName("script")[0];var b=document.createElement("script");b.type="text/javascript";b.async=true;b.src="https://snap.licdn.com/li.lms-analytics/insight.min.js";s.parentNode.insertBefore(b,s);})(window.lintrk);</script>`);
   }
 
+  const anyTrackerActive = parts.length > 0;
+
+  // Google Ads click-ID capture (gclid/wbraid/gbraid → localStorage+cookie,
+  // ~90-day TTL) — same logic as src/lib/click-ids.ts, inline so paid clicks
+  // landing on mirror pages keep their click ID for the React lead form.
+  // Always emitted (independent of tracker env vars).
+  parts.push(
+    `<script>(function(){try{var p=new URLSearchParams(location.search);["gclid","wbraid","gbraid"].forEach(function(k){var v=p.get(k);if(!v||!/^[A-Za-z0-9_-]{1,200}$/.test(v))return;try{localStorage.setItem("fusion_"+k,JSON.stringify({v:v,t:Date.now()}))}catch(e){}document.cookie="fusion_"+k+"="+encodeURIComponent(v)+"; max-age=7776000; path=/; SameSite=Lax"})}catch(e){}})();</script>`,
+  );
+
   // Tel:/mailto: click delegation — same logic as the React
   // ContactClickTracker, but inline JS so it works on mirror pages too.
   // Only emit when any tracker is active.
-  if (parts.length) {
+  if (anyTrackerActive) {
     parts.push(`<script>document.addEventListener('click',function(e){var a=e.target&&e.target.closest&&e.target.closest('a');if(!a)return;var h=a.getAttribute('href')||'';if(h.indexOf('tel:')===0){if(window.gtag)gtag('event','phone_call',{phone:h.slice(4)});if(window.fbq)fbq('track','Contact',{phone:h.slice(4)});if(window.dataLayer)dataLayer.push({event:'phone_call',phone:h.slice(4)});}else if(h.indexOf('mailto:')===0){var em=h.slice(7).split('?')[0];if(window.gtag)gtag('event','email_click',{email:em});if(window.fbq)fbq('track','Contact',{email:em});if(window.dataLayer)dataLayer.push({event:'email_click',email:em});}},true);</script>`);
   }
 
@@ -2051,6 +2061,12 @@ const leadSchema = z.object({
   recaptchaToken: z.string().max(5000).optional(),
   sourcePage: z.string().max(500).optional(),
   referrer: z.string().max(500).optional(),
+  // Google Ads click IDs captured client-side on landing (src/lib/click-ids.ts).
+  // Surfaced in the lead email so closed sales can be uploaded to Google Ads
+  // as offline conversions with real values.
+  gclid: z.string().regex(/^[A-Za-z0-9_-]{1,200}$/).optional(),
+  wbraid: z.string().regex(/^[A-Za-z0-9_-]{1,200}$/).optional(),
+  gbraid: z.string().regex(/^[A-Za-z0-9_-]{1,200}$/).optional(),
 });
 
 function escapeHtml(input) {
@@ -2082,6 +2098,11 @@ function formatLeadEmail(lead) {
     `From page: ${lead.sourcePage || "(unknown)"}`,
     `Referrer:  ${lead.referrer || "(direct)"}`,
   ];
+  // Google Ads click IDs — keep the "GCLID:" label greppable; the offline
+  // conversion upload flow reads it out of the sales@ email.
+  if (lead.gclid) lines.push(`GCLID: ${lead.gclid}`);
+  if (lead.wbraid) lines.push(`WBRAID: ${lead.wbraid}`);
+  if (lead.gbraid) lines.push(`GBRAID: ${lead.gbraid}`);
   const text = lines.join("\n");
   const html = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px;">
@@ -2098,7 +2119,7 @@ function formatLeadEmail(lead) {
       <p style="color: #999; font-size: 12px;">
         Submitted ${new Date().toISOString()}<br>
         From page: ${escapeHtml(lead.sourcePage || "(unknown)")}<br>
-        Referrer: ${escapeHtml(lead.referrer || "(direct)")}
+        Referrer: ${escapeHtml(lead.referrer || "(direct)")}${lead.gclid ? `<br>GCLID: ${escapeHtml(lead.gclid)}` : ""}${lead.wbraid ? `<br>WBRAID: ${escapeHtml(lead.wbraid)}` : ""}${lead.gbraid ? `<br>GBRAID: ${escapeHtml(lead.gbraid)}` : ""}
       </p>
     </div>
   `;

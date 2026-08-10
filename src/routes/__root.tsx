@@ -14,6 +14,7 @@ import { OdooLiveChat } from "@/components/chat/OdooLiveChat";
 import { OrganizationSchema } from "@/components/schema/OrganizationSchema";
 import { TrackingScripts } from "@/components/tracking/TrackingScripts";
 import { ContactClickTracker } from "@/components/tracking/ContactClickTracker";
+import { ClickIdCapture } from "@/components/tracking/ClickIdCapture";
 
 import appCss from "../styles.css?url";
 
@@ -152,6 +153,7 @@ function RootComponent() {
         <Footer />
         <OrganizationSchema />
         <ContactClickTracker />
+        <ClickIdCapture />
       </div>
     </QueryClientProvider>
   );

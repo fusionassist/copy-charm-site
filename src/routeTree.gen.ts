@@ -13,6 +13,8 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as GoogleAdsToolRouteImport } from './routes/google-ads-tool'
 import { Route as DigitalSignageForSchoolsRouteImport } from './routes/digital-signage-for-schools'
+import { Route as DigitalSignageRouteImport } from './routes/digital-signage'
+import { Route as DigitalMenuBoardsRouteImport } from './routes/digital-menu-boards'
 import { Route as ContactUsRouteImport } from './routes/contact-us'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProductSlugRouteImport } from './routes/product.$slug'
@@ -39,6 +41,16 @@ const DigitalSignageForSchoolsRoute =
     path: '/digital-signage-for-schools',
     getParentRoute: () => rootRouteImport,
   } as any)
+const DigitalSignageRoute = DigitalSignageRouteImport.update({
+  id: '/digital-signage',
+  path: '/digital-signage',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DigitalMenuBoardsRoute = DigitalMenuBoardsRouteImport.update({
+  id: '/digital-menu-boards',
+  path: '/digital-menu-boards',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ContactUsRoute = ContactUsRouteImport.update({
   id: '/contact-us',
   path: '/contact-us',
@@ -63,6 +75,8 @@ const DevMdxTestRoute = DevMdxTestRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/contact-us': typeof ContactUsRoute
+  '/digital-menu-boards': typeof DigitalMenuBoardsRoute
+  '/digital-signage': typeof DigitalSignageRoute
   '/digital-signage-for-schools': typeof DigitalSignageForSchoolsRoute
   '/google-ads-tool': typeof GoogleAdsToolRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
@@ -73,6 +87,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/contact-us': typeof ContactUsRoute
+  '/digital-menu-boards': typeof DigitalMenuBoardsRoute
+  '/digital-signage': typeof DigitalSignageRoute
   '/digital-signage-for-schools': typeof DigitalSignageForSchoolsRoute
   '/google-ads-tool': typeof GoogleAdsToolRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
@@ -84,6 +100,8 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/contact-us': typeof ContactUsRoute
+  '/digital-menu-boards': typeof DigitalMenuBoardsRoute
+  '/digital-signage': typeof DigitalSignageRoute
   '/digital-signage-for-schools': typeof DigitalSignageForSchoolsRoute
   '/google-ads-tool': typeof GoogleAdsToolRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
@@ -96,6 +114,8 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/contact-us'
+    | '/digital-menu-boards'
+    | '/digital-signage'
     | '/digital-signage-for-schools'
     | '/google-ads-tool'
     | '/privacy-policy'
@@ -106,6 +126,8 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/contact-us'
+    | '/digital-menu-boards'
+    | '/digital-signage'
     | '/digital-signage-for-schools'
     | '/google-ads-tool'
     | '/privacy-policy'
@@ -116,6 +138,8 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/contact-us'
+    | '/digital-menu-boards'
+    | '/digital-signage'
     | '/digital-signage-for-schools'
     | '/google-ads-tool'
     | '/privacy-policy'
@@ -127,6 +151,8 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ContactUsRoute: typeof ContactUsRoute
+  DigitalMenuBoardsRoute: typeof DigitalMenuBoardsRoute
+  DigitalSignageRoute: typeof DigitalSignageRoute
   DigitalSignageForSchoolsRoute: typeof DigitalSignageForSchoolsRoute
   GoogleAdsToolRoute: typeof GoogleAdsToolRoute
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
@@ -165,6 +191,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DigitalSignageForSchoolsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/digital-signage': {
+      id: '/digital-signage'
+      path: '/digital-signage'
+      fullPath: '/digital-signage'
+      preLoaderRoute: typeof DigitalSignageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/digital-menu-boards': {
+      id: '/digital-menu-boards'
+      path: '/digital-menu-boards'
+      fullPath: '/digital-menu-boards'
+      preLoaderRoute: typeof DigitalMenuBoardsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/contact-us': {
       id: '/contact-us'
       path: '/contact-us'
@@ -199,6 +239,8 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ContactUsRoute: ContactUsRoute,
+  DigitalMenuBoardsRoute: DigitalMenuBoardsRoute,
+  DigitalSignageRoute: DigitalSignageRoute,
   DigitalSignageForSchoolsRoute: DigitalSignageForSchoolsRoute,
   GoogleAdsToolRoute: GoogleAdsToolRoute,
   PrivacyPolicyRoute: PrivacyPolicyRoute,

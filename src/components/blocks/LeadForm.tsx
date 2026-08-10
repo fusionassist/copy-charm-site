@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { track } from "@/lib/track";
 import { getRecaptchaToken } from "@/lib/recaptcha";
+import { getClickIds } from "@/lib/click-ids";
 
 const leadSchema = z.object({
   name: z.string().min(1, "Please enter your name").max(120),
@@ -49,6 +50,9 @@ export function LeadForm() {
           recaptchaToken,
           sourcePage: typeof window !== "undefined" ? window.location.pathname : undefined,
           referrer: typeof document !== "undefined" ? document.referrer : undefined,
+          // Google Ads click IDs captured on landing (see lib/click-ids.ts) —
+          // surfaced in the lead email for offline conversion uploads.
+          ...getClickIds(),
         }),
       });
       const data = await res.json().catch(() => ({}));
