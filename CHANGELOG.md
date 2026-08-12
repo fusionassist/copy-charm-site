@@ -8,6 +8,10 @@ Format inspired by [keepachangelog.com](https://keepachangelog.com/en/1.1.0/); n
 
 ## [Unreleased]
 
+### Removed — 2026-08-06 — Discontinued "mirror" products (Mirror Touch Screen + AR Mirror)
+
+`rewriteMirrorHtml` now strips the **Mirror Touch Screen** and **AR Mirror** `wpr-promo-box` tiles from the WP/Elementor mega-menu + product grids sitewide (regex matches each self-contained tile by its product link + title span, then removes the whole balanced tile — verified div-neutral on the mirror snapshot). Their legacy product URLs (`/product/mirror-touch-screen/`, `/product/ar-mirror/`, both slash forms) now **301 → `/screen-solutions/`** via `resolveRedirect`, so any indexed or externally-linked URLs don't dead-end. (UK sister site had no mirror products — only two orphan unused images, deleted separately.)
+
 ### Added — 2026-08-06 — Cross-link + hreflang to the UK sister site (interactivedisplaysuk.com)
 
 Off-site SEO to accelerate organic authority for the newly-launched UK sister site. `rewriteMirrorHtml` now (a) injects a sitewide **"In the UK? Visit our sister site → Interactive Displays UK"** link into the pre-footer strip on every mirror page (followable link → passes authority + aids discovery), and (b) on the **homepage only** (production only, `!NOINDEX`) injects an **hreflang cluster** (`en-ie` → this site, `en-gb` → interactivedisplaysuk.com, `x-default` → this site) so Google serves the right brand per country and the two don't compete for UK searchers. Homepage-scoped because the sites aren't 1:1 (a bad sitewide mapping causes GSC hreflang errors). Reciprocated by matching tags on the UK homepage. `rewriteMirrorHtml` now takes `pathname` (passed from `tryServeMirror`).

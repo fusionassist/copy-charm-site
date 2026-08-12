@@ -329,6 +329,19 @@ function resolveRedirect(pathname, search) {
   if (androidConsolidation[pathname]) {
     return { target: androidConsolidation[pathname], status: 301 };
   }
+  // Discontinued "mirror" products removed 2026-08-06 (Mirror Touch Screen +
+  // AR Mirror). 301 their legacy /product/* URLs to Screen Solutions so any
+  // indexed or externally-linked URLs don't dead-end. The mega-menu/grid
+  // tiles are stripped in rewriteMirrorHtml.
+  const removedProductRedirects = {
+    "/product/mirror-touch-screen":  "/screen-solutions/",
+    "/product/mirror-touch-screen/": "/screen-solutions/",
+    "/product/ar-mirror":  "/screen-solutions/",
+    "/product/ar-mirror/": "/screen-solutions/",
+  };
+  if (removedProductRedirects[pathname]) {
+    return { target: removedProductRedirects[pathname], status: 301 };
+  }
   // /elementor-6/* — legacy WordPress + Elementor homepage template path.
   // Same content as /, so any visitor (or Googlebot) hitting it gets
   // 301'd to the canonical homepage.
@@ -769,6 +782,27 @@ function rewriteMirrorHtml(html, pathname = "") {
       /(<h3 class="wpr-promo-box-title"><span>LED Box Signage<\/span><\/h3>\s*<\/div>\s*<\/div>\s*<\/div>)/,
       `$1${cluscoreTile}`,
     );
+  }
+  // 1d². Remove discontinued "mirror" product tiles (Mirror Touch Screen +
+  //      AR Mirror) from the WP/Elementor mega-menu + product grids sitewide
+  //      (2026-08-06). Matches each self-contained wpr-promo-box tile by its
+  //      product link + title and strips the whole balanced tile (verified
+  //      div-neutral). The product URLs themselves 301 to /screen-solutions/
+  //      via resolveRedirect.
+  for (const { slug, title } of [
+    { slug: "ar-mirror", title: "AR Mirror" },
+    { slug: "mirror-touch-screen", title: "Mirror Touch Screen" },
+  ]) {
+    if (!out.includes(`product/${slug}/`)) continue;
+    const tileRe = new RegExp(
+      `<div class="elementor-element[^"]*elementor-widget-wpr-promo-box"[^>]*>` +
+        `(?:(?!<div class="elementor-element)[\\s\\S])*?` +
+        `href="[^"]*product/${slug}/"` +
+        `(?:(?!<div class="elementor-element)[\\s\\S])*?` +
+        `<h3 class="wpr-promo-box-title"><span>${title}</span></h3>\\s*</div>\\s*</div>\\s*</div>`,
+      "g",
+    );
+    out = out.replace(tileRe, "");
   }
   // 1e. Sitewide internal links to the new React landing pages, injected
   //     just before the footer on every mirror page. The mirror pages are
