@@ -8,6 +8,11 @@ Format inspired by [keepachangelog.com](https://keepachangelog.com/en/1.1.0/); n
 
 ## [Unreleased]
 
+### Added — 2026-08-18 — Real install photos on the UHB pages
+
+Seven real Irish window-display installs (from Dropbox `All_Screens_Application\Window Displays`, resized to ≤1400px/~250KB each) now lead the UHB TNI gallery — Neylon's Pharmacy, Domino's, Head|Office hairdressing, Renaissance Aesthetics, Bettystown Library (Meath CoCo), Kells Swimming Pool, TEN10 café — with the hero switched from render to the Neylon's install and a social-proof line added to the copy. Two installs added to the 4K page gallery. Skipped one otherwise-good photo (Lynam) containing an identifiable passer-by. NOTE for future kits: `All_Screens_Application/` has per-category real-install folders — use them; installs-first galleries are the anti-Allsee move (their pages use renders).
+
+
 ### Fixed — 2026-08-18 — Strip dead WordPress-backend fossils + never-zero stat counters (mirror sitewide)
 
 The wget snapshot missed files WordPress served dynamically, so every mirror page carried refs that 404 and inline scripts that throw: `wp-includes/js/dist/{hooks,i18n}.min.js` (→ uncaught `wp is not defined` from `wp-i18n-js-after`), the emoji module loader (fetches `wp-emoji-release.min.js`, not in the snapshot), and Google Site Kit's two event-provider bundles plus their `-before` inline blocks (threw `…reading 'wcdata'` because the `window._googlesitekit` initializer lives in the legacy gtag block that `LEGACY_TRACKING_PATTERNS` already strips). `rewriteMirrorHtml` steps 1a⁴–1a⁶ now strip all of these, bake Elementor counters' final values into the markup (`data-to-value` → element text) so homepage stats can never render as "0/10 … 0%" when animation JS stumbles (the handler still animates when healthy), and fix mirror typos the WP backend can no longer receive ("Outoor" → "Outdoor"; stray `//` before "Want full control" in the Other Services block on product pages). Remaining known console noise: Elementor's lazy `nested-title-keyboard-handler` chunk 404s (a11y nicety, not in the snapshot; graceful-degraded ChunkLoadError, no visual impact).
