@@ -162,7 +162,8 @@ const MIRROR_PAGES = [
   "/product/mounted-outdoor-display/",
   "/product/android-a-board/",
   "/product/outdoor-self-service-kiosk/",
-  "/product/ultra-high-bright-display/",
+  // "/product/ultra-high-bright-display/" removed 2026-08-18 — now an MDX
+  // product page (auto-added to the sitemap by the products loader).
   "/product/ultra-high-bright-display-tni/",
   "/product/hanging-dual-sided-display/",
   "/product/professional-monitor/",
@@ -325,6 +326,8 @@ function resolveRedirect(pathname, search) {
     "/product/moy-32ds60/": "/product/android-network-display",
     // Digital Menu Screens React product page took over this legacy URL.
     "/product/network-menu-boards/": "/product/network-menu-boards",
+    // Ultra High Brightness Window Displays React page (2026-08-18).
+    "/product/ultra-high-bright-display/": "/product/ultra-high-bright-display",
   };
   if (androidConsolidation[pathname]) {
     return { target: androidConsolidation[pathname], status: 301 };
@@ -437,6 +440,10 @@ const MIRROR_EXCLUDE = new Set([
   // /product/network-menu-boards URL (2026-07-13). Trailing-slash 301s
   // to canonical no-slash (resolveRedirect).
   "/product/network-menu-boards",
+  // Ultra High Brightness Window Displays (MOY-43/49/55/65/75UHBHD) —
+  // React product page with per-size spec tables + downloads took over
+  // this legacy URL (2026-08-18, first Product Bible range-page kit).
+  "/product/ultra-high-bright-display",
   "/llms.txt",
   "/llms-full.txt",
   "/robots.txt",
