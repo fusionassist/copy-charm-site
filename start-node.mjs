@@ -789,6 +789,41 @@ function rewriteMirrorHtml(html, pathname = "") {
   // 1a⁶. Copy fixes the WP backend can no longer receive: mirror typos.
   out = out.replace(/\bOutoor\b/g, "Outdoor");
   out = out.replace(/\/\/(Want full control)/g, "$1");
+  // 1a⁷. Mobile CSS repairs (2026-08-18, from Gerry's phone screenshots).
+  //      The snapshot froze the Elementor n-menu in its DESKTOP layout, so on
+  //      phones the opened menu rendered as a cramped right-aligned strip
+  //      overlapping the logo. Restyle the OPEN state (:has on the toggle's
+  //      aria-expanded, which the still-working nested-menu JS maintains)
+  //      into a full-width dark panel with stacked tap targets. Also: compact
+  //      the header "Get In Touch" CTA that clipped off the right edge
+  //      (shared header template, stable data-id 36f8b19), and force-hide the
+  //      hero background-video container on phones (stray playback artefacts).
+  if (out.includes("e-n-menu") && out.includes("</head>")) {
+    const mobileFixCss =
+      `<style id="idi-mobile-fixes">` +
+      `@media (max-width:1024px){` +
+      `.e-n-menu:has(.e-n-menu-toggle[aria-expanded="true"]) .e-n-menu-wrapper{` +
+      `position:fixed !important;top:108px;left:0;right:0;z-index:99999;` +
+      `background:#04122e;box-shadow:0 18px 34px rgba(0,0,0,.5);` +
+      `max-height:calc(100vh - 108px);overflow-y:auto;padding:4px 0 12px;` +
+      `display:block !important;width:100% !important;}` +
+      `.e-n-menu .e-n-menu-heading{display:block !important;width:100% !important;height:auto !important;}` +
+      `.e-n-menu .e-n-menu-item{display:block !important;width:100% !important;border-bottom:1px solid rgba(255,255,255,.09);}` +
+      `.e-n-menu .e-n-menu-title{display:flex !important;align-items:center;justify-content:space-between;width:100%;}` +
+      `.e-n-menu .e-n-menu-title-container{flex:1 1 auto;padding:14px 22px !important;justify-content:flex-start !important;}` +
+      `.e-n-menu .e-n-menu-title-text{color:#fff !important;font-size:17px !important;font-weight:600 !important;line-height:1.2;}` +
+      `.e-n-menu .e-n-menu-dropdown-icon{flex:0 0 auto;padding:14px 20px !important;background:transparent;border:0;}` +
+      `.e-n-menu .e-n-menu-dropdown-icon svg{width:14px;height:14px;fill:#fff;}` +
+      `.e-n-menu .e-n-menu-content{width:100% !important;max-height:58vh;overflow-y:auto;}` +
+      `}` +
+      `@media (max-width:767px){` +
+      `.elementor-background-video-container{display:none !important;}` +
+      `.elementor-element-36f8b19 .elementor-button{padding:8px 14px !important;font-size:12px !important;}` +
+      `.elementor-element-36f8b19{margin-right:8px;}` +
+      `}` +
+      `</style>`;
+    out = out.replace("</head>", mobileFixCss + "</head>");
+  }
   // The careers "Apply Now" buttons pointed at #apply — an anchor that
   // only existed as the HubSpot popup's trigger. Repoint them at the
   // on-page Elementor form so the buttons scroll to the working form.
