@@ -164,7 +164,9 @@ const MIRROR_PAGES = [
   "/product/outdoor-self-service-kiosk/",
   // "/product/ultra-high-bright-display/" removed 2026-08-18 — now an MDX
   // product page (auto-added to the sitemap by the products loader).
-  "/product/ultra-high-bright-display-tni/",
+  // "/product/ultra-high-bright-display-tni/" removed 2026-08-18 — 301s to
+  // the main range page; the tile became the 4K listing (MDX, in sitemap
+  // via the products loader).
   "/product/hanging-dual-sided-display/",
   "/product/professional-monitor/",
   "/product/large-format-signage/",
@@ -328,6 +330,10 @@ function resolveRedirect(pathname, search) {
     "/product/network-menu-boards/": "/product/network-menu-boards",
     // Ultra High Brightness Window Displays React page (2026-08-18).
     "/product/ultra-high-bright-display/": "/product/ultra-high-bright-display",
+    // Legacy TNI listing folded into the main range page (all units are TNI
+    // now); the old tile was repurposed as the 4K listing (2026-08-18).
+    "/product/ultra-high-bright-display-tni": "/product/ultra-high-bright-display",
+    "/product/ultra-high-bright-display-tni/": "/product/ultra-high-bright-display",
   };
   if (androidConsolidation[pathname]) {
     return { target: androidConsolidation[pathname], status: 301 };
@@ -796,6 +802,24 @@ function rewriteMirrorHtml(html, pathname = "") {
   // 1a⁶. Copy fixes the WP backend can no longer receive: mirror typos.
   out = out.replace(/\bOutoor\b/g, "Outdoor");
   out = out.replace(/\/\/(Want full control)/g, "$1");
+  // 1a⁶b. UHB listing restructure (Gerry 2026-08-18): every unit sold is now
+  //       TNI, so two separate TNI/non-TNI listings made no sense. The old
+  //       "DisplayTNI" tile becomes the 4K listing (new React page
+  //       /product/ultra-high-bright-display-4k); the plain tile is renamed
+  //       TNI and keeps pointing at the main TNI range page. The legacy
+  //       -tni URL 301s to the main range page (resolveRedirect).
+  out = out.replace(
+    /href="[^"]*product\/ultra-high-bright-display-tni\/?"/gi,
+    'href="/product/ultra-high-bright-display-4k"',
+  );
+  out = out.replace(
+    /<span>Ultra High Bright DisplayTNI<\/span>/g,
+    "<span>Ultra High Bright Display 4K</span>",
+  );
+  out = out.replace(
+    /<span>Ultra High Bright Display<\/span>/g,
+    "<span>Ultra High Bright Display TNI</span>",
+  );
   // 1a⁷. Mobile CSS repairs (2026-08-18, from Gerry's phone screenshots).
   //      The snapshot froze the Elementor n-menu in its DESKTOP layout, so on
   //      phones the opened menu rendered as a cramped right-aligned strip
