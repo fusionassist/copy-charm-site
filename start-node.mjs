@@ -820,6 +820,14 @@ function rewriteMirrorHtml(html, pathname = "") {
       `.elementor-background-video-container{display:none !important;}` +
       `.elementor-element-36f8b19 .elementor-button{padding:8px 14px !important;font-size:12px !important;}` +
       `.elementor-element-36f8b19{margin-right:8px;}` +
+      // Mobile typography: the Elementor kit has almost no responsive
+      // overrides (desktop sizes ship to phones — 50px hero h1 at 375px).
+      // Cap heading sizes so true-mobile rendering is readable without
+      // zooming out.
+      `h1.elementor-heading-title{font-size:32px !important;line-height:1.15 !important;}` +
+      `h2.elementor-heading-title{font-size:20px !important;line-height:1.3 !important;}` +
+      `h3.elementor-heading-title{font-size:18px !important;line-height:1.3 !important;}` +
+      `.elementor-counter-number,.elementor-counter-number-suffix{font-size:30px !important;}` +
       `}` +
       `</style>`;
     out = out.replace("</head>", mobileFixCss + "</head>");
