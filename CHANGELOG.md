@@ -10,7 +10,7 @@ Format inspired by [keepachangelog.com](https://keepachangelog.com/en/1.1.0/); n
 
 ### Added — 2026-08-18 — Real install photos on the UHB pages
 
-Seven real Irish window-display installs (from Dropbox `All_Screens_Application\Window Displays`, resized to ≤1400px/~250KB each) now lead the UHB TNI gallery — Neylon's Pharmacy, Domino's, Head|Office hairdressing, Renaissance Aesthetics, Bettystown Library (Meath CoCo), Kells Swimming Pool, TEN10 café — with the hero switched from render to the Neylon's install and a social-proof line added to the copy. Two installs added to the 4K page gallery. Skipped one otherwise-good photo (Lynam) containing an identifiable passer-by. NOTE for future kits: `All_Screens_Application/` has per-category real-install folders — use them; installs-first galleries are the anti-Allsee move (their pages use renders).
+Seven real Irish window-display installs (from Dropbox `All_Screens_Application\Window Displays`, resized to ≤1400px/~250KB each) now lead the UHB TNI gallery — Neylon's Pharmacy, Domino's, Head|Office hairdressing, Renaissance Aesthetics, Bettystown Library (Meath CoCo), Kells Swimming Pool, TEN10 café — with the hero switched from render to the Neylon's install and a social-proof line added to the copy. Two installs added to the 4K page gallery. Skipped one otherwise-good photo at the client's request. NOTE for future kits: `All_Screens_Application/` has per-category real-install folders — use them; installs-first galleries are the anti-Allsee move (their pages use renders).
 
 
 ### Fixed — 2026-08-18 — Strip dead WordPress-backend fossils + never-zero stat counters (mirror sitewide)
