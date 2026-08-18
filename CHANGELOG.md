@@ -14,7 +14,7 @@ The wget snapshot missed files WordPress served dynamically, so every mirror pag
 
 ### Changed — 2026-08-18 — UHB listings restructured: TNI (standard) + new 4K listing
 
-Every UHB unit sold is now TNI, so the separate TNI/non-TNI listings made no sense (Gerry). The main range page is retitled "— TNI"; the old "Ultra High Bright DisplayTNI" tile is repurposed as **Ultra High Bright Display 4K** → new MDX page `/product/ultra-high-bright-display-4k` built on the 86" 4K unit (3840×2160, 3,000 cd/m², TNI, Android 11/RK3568, specs from the 86" OEM sheet; spec sheet + technical drawing downloads; "4K in other sizes on request"). Mirror tiles renamed/retargeted in the rewriter; legacy `/product/ultra-high-bright-display-tni` 301s to the main range page. New product code MOY-86UHB4K is PROPOSED — not yet in the price file or Odoo (flagged in the Product Bible).
+Every UHB unit sold is now TNI, so the separate TNI/non-TNI listings made no sense (Gerry). The main range page is retitled "— TNI"; the old "Ultra High Bright DisplayTNI" tile is repurposed as **Ultra High Bright Display 4K** → new MDX page `/product/ultra-high-bright-display-4k`: 4K (3840×2160) versions of the standard range sizes 43"–75", supplied to order, enquiry-led (no fabricated SKUs — CORRECTED same day after an 86" unit was briefly listed off a supplier spec sheet; IDI's range is 43/49/55/65/75 only). Mirror tiles renamed/retargeted in the rewriter; legacy `/product/ultra-high-bright-display-tni` 301s to the main range page.
 
 ### Added — 2026-08-18 — /product/ultra-high-bright-display rebuilt as a full range page (first Product Bible kit)
 
