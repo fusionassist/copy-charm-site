@@ -750,6 +750,45 @@ function rewriteMirrorHtml(html, pathname = "") {
     /<link\b[^>]*href=["'][^"']*hs-scripts\.com[^"']*["'][^>]*\/?>/gi,
     "",
   );
+  // 1a⁴. Strip dead WordPress-backend fossils (2026-08-18). The wget snapshot
+  //      missed files WP served dynamically, so on every mirror page these
+  //      refs 404 and their dependent inline scripts throw ("wp is not
+  //      defined", "_googlesitekit … wcdata"). The WP backend is gone:
+  //      wp-hooks/wp-i18n tags + the wp-i18n-js-after inline; the emoji
+  //      settings JSON + its module loader (fetches wp-emoji-release.min.js,
+  //      not in the snapshot); Google Site Kit event-provider tags + their
+  //      -before inline blocks (our tracking is env-injected in step 3).
+  out = out.replace(/<script\b[^>]*\bid="wp-hooks-js"[^>]*>\s*<\/script>/gi, "");
+  out = out.replace(/<script\b[^>]*\bid="wp-i18n-js"[^>]*>\s*<\/script>/gi, "");
+  out = out.replace(/<script id="wp-i18n-js-after">[^<]*<\/script>/gi, "");
+  out = out.replace(
+    /<script id="wp-emoji-settings" type="application\/json">[^<]*<\/script>/gi,
+    "",
+  );
+  out = out.replace(
+    /<script type="module">\s*\/\*! This file is auto-generated \*\/\s*const a=JSON\.parse\(document\.getElementById\("wp-emoji-settings"\)[\s\S]*?<\/script>/gi,
+    "",
+  );
+  out = out.replace(
+    /<script id="googlesitekit-events-provider-[\w-]+-js-before">[^<]*<\/script>/gi,
+    "",
+  );
+  out = out.replace(
+    /<script src="[^"]*google-site-kit[^"]*"[^>]*>\s*<\/script>/gi,
+    "",
+  );
+  // 1a⁵. Elementor stat counters: bake the final value into the markup so the
+  //      homepage stats can never render as "0/10 … 0%" (what a visitor sees
+  //      whenever the animation JS stumbles on a fossil error; static-correct
+  //      beats animated-wrong). The counter handler still animates when
+  //      healthy — it reads data-from/to-value, not the text.
+  out = out.replace(
+    /(<span class="elementor-counter-number"[^>]*\bdata-to-value="([^"]+)"[^>]*>)[\d.,]*(<\/span>)/g,
+    "$1$2$3",
+  );
+  // 1a⁶. Copy fixes the WP backend can no longer receive: mirror typos.
+  out = out.replace(/\bOutoor\b/g, "Outdoor");
+  out = out.replace(/\/\/(Want full control)/g, "$1");
   // The careers "Apply Now" buttons pointed at #apply — an anchor that
   // only existed as the HubSpot popup's trigger. Repoint them at the
   // on-page Elementor form so the buttons scroll to the working form.

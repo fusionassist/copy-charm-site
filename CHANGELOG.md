@@ -8,6 +8,10 @@ Format inspired by [keepachangelog.com](https://keepachangelog.com/en/1.1.0/); n
 
 ## [Unreleased]
 
+### Fixed — 2026-08-18 — Strip dead WordPress-backend fossils + never-zero stat counters (mirror sitewide)
+
+The wget snapshot missed files WordPress served dynamically, so every mirror page carried refs that 404 and inline scripts that throw: `wp-includes/js/dist/{hooks,i18n}.min.js` (→ uncaught `wp is not defined` from `wp-i18n-js-after`), the emoji module loader (fetches `wp-emoji-release.min.js`, not in the snapshot), and Google Site Kit's two event-provider bundles plus their `-before` inline blocks (threw `…reading 'wcdata'` because the `window._googlesitekit` initializer lives in the legacy gtag block that `LEGACY_TRACKING_PATTERNS` already strips). `rewriteMirrorHtml` steps 1a⁴–1a⁶ now strip all of these, bake Elementor counters' final values into the markup (`data-to-value` → element text) so homepage stats can never render as "0/10 … 0%" when animation JS stumbles (the handler still animates when healthy), and fix mirror typos the WP backend can no longer receive ("Outoor" → "Outdoor"; stray `//` before "Want full control" in the Other Services block on product pages). Remaining known console noise: Elementor's lazy `nested-title-keyboard-handler` chunk 404s (a11y nicety, not in the snapshot; graceful-degraded ChunkLoadError, no visual impact).
+
 ### Removed — 2026-08-06 — Discontinued "mirror" products (Mirror Touch Screen + AR Mirror)
 
 `rewriteMirrorHtml` now strips the **Mirror Touch Screen** and **AR Mirror** `wpr-promo-box` tiles from the WP/Elementor mega-menu + product grids sitewide (regex matches each self-contained tile by its product link + title span, then removes the whole balanced tile — verified div-neutral on the mirror snapshot). Their legacy product URLs (`/product/mirror-touch-screen/`, `/product/ar-mirror/`, both slash forms) now **301 → `/screen-solutions/`** via `resolveRedirect`, so any indexed or externally-linked URLs don't dead-end. (UK sister site had no mirror products — only two orphan unused images, deleted separately.)
