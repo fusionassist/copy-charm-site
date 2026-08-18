@@ -8,6 +8,10 @@ Format inspired by [keepachangelog.com](https://keepachangelog.com/en/1.1.0/); n
 
 ## [Unreleased]
 
+### Changed — 2026-08-18 — Visitor Assist rebranded ESII/Orion → QFusion (mirror)
+
+The Visitor Assist section was the legacy ESII "Orion" offering; IDI now sells its own **QFusion** queue platform (app.qfusion.ai). Handled in `rewriteMirrorHtml` (mirror-first, no React rebuild): (a) an ESII→QFusion **image map** swaps every ESII product image (queue-management-esii, orion-appointment, Statistique-ORION-ESII, TicketVirtuel, digital-smartphone-ticket, Satisfaction-survey-1/2/3, reception-1/2/3, Reception-Mobile, etc.) — and all their `-NNxNN` srcset variants, with `/`-or-`\/` separators — to the QFusion marketing photos now in `public/images/va/`; (b) **text rebrand** Orion/ORION/Twana™/SmartWait™/SmartKiosk™/ESII → QFusion; (c) a **QFusion CTA** (app.qfusion.ai) injected before the footer on the 5 VA pages. **Customer Counting, Vending Machines and Events dropped** (not QFusion) — Counting + Vending 301 → `/queue-management-system/` (`resolveRedirect`), and both removed from the React nav's Visitor Assist dropdown. Verified on all 5 mirror pages: 0 esii/orion/twana/smartwait/smartkiosk, 38–52 QFusion image refs each. QFusion images match the UK site (`interactivedisplaysuk.com`). Deploy needed (avclaudeadmin).
+
 ### Changed — 2026-08-18 — Complete UHB drawing set + TNI brochure (downloads now beat the Allsee page)
 
 Found the FULL TNI drawing sets in Dropbox (`UHB panel---horizontal/vertical design/` — every size, both orientations, unbranded): the TNI page now offers **10 technical drawings** (43/49/55/65/75 × landscape+portrait) replacing the 3 mixed-revision one-offs, plus the proper **TNI brochure** (was the older 55/65-only non-TNI one; same URL, content swapped). The 4K page gets the brochure too. Spec corrections from the drawing set: 55" VESA is 400×400 (not 400×200/400×400); 65" is 1450.4×825.4mm VESA **600×400**; 75" is 1672.6×951.6mm VESA **600×400** (price-file dims were off). Downloads: 15 documents on the TNI page vs Allsee's 11 on their equivalent.

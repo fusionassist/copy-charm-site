@@ -351,6 +351,17 @@ function resolveRedirect(pathname, search) {
   if (removedProductRedirects[pathname]) {
     return { target: removedProductRedirects[pathname], status: 301 };
   }
+  // Discontinued Visitor Assist solutions (not QFusion features) — 2026-08-18.
+  // Customer Counting + Vending Machines 301 → Queue Management (the VA home).
+  const removedVaRedirects = {
+    "/customer-counting-solution": "/queue-management-system/",
+    "/customer-counting-solution/": "/queue-management-system/",
+    "/vending-machines": "/queue-management-system/",
+    "/vending-machines/": "/queue-management-system/",
+  };
+  if (removedVaRedirects[pathname]) {
+    return { target: removedVaRedirects[pathname], status: 301 };
+  }
   // /elementor-6/* — legacy WordPress + Elementor homepage template path.
   // Same content as /, so any visitor (or Googlebot) hitting it gets
   // 301'd to the canonical homepage.
@@ -916,6 +927,77 @@ function rewriteMirrorHtml(html, pathname = "") {
       "g",
     );
     out = out.replace(tileRe, "");
+  }
+  // 1d³. Visitor Assist: ESII/Orion → QFusion rebrand (2026-08-18). The VA
+  //      pages + menu were the legacy ESII "Orion" offering; we now sell our
+  //      own QFusion queue platform (app.qfusion.ai). Swap the ESII product
+  //      images for QFusion ones, rebrand the vendor names in text, and add a
+  //      QFusion CTA on the VA pages. Customer Counting + Vending are dropped
+  //      (301 → /queue-management-system/ in resolveRedirect). Runs sitewide
+  //      because the VA solution thumbnails appear in the mega-menu everywhere.
+  const VA_IMAGE_MAP = {
+    // Precise regex (<base> + optional -NNxNN + ext) means longer and shorter
+    // bases don't collide, so order is not significant.
+    "queue-management-esii": "queue-management",
+    "Statistique-ORION-ESII": "qms-statistics",
+    "orion-appointment": "qms-online-appointment",
+    "TicketVirtuel-388x388-2": "qms-digital-ticket",
+    "ticket-virtuel-ticket-appel": "ticket-app",
+    "Reception-Mobile": "qms-mobile",
+    "digital-smartphone-ticket-1-1": "digital-ticket",
+    "digital-smartphone-ticket-1": "digital-ticket",
+    "digital-smartphone-ticket": "digital-ticket",
+    "online-appointment-solution-2": "online-appointment",
+    "online-appointment-solution-1": "oa-receive",
+    "online-appointment-solution": "online-appointment",
+    "Satisfaction-survey-1": "survey-simplicity",
+    "Satisfaction-survey-2": "survey-confidentiality",
+    "Satisfaction-survey-3": "survey-selfservice",
+    "Satisfaction-survey": "satisfaction-survey",
+    "corporate-reception-solution": "corporate-reception",
+    "customer-counting-solution": "queue-management",
+    "reception-1": "reception-1",
+    "reception-2": "reception-2",
+    "reception-3": "reception-4",
+    "reception": "corporate-reception",
+  };
+  for (const [base, qf] of Object.entries(VA_IMAGE_MAP)) {
+    const b = base.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    // Path separators may be "/" or JSON-escaped "\/" in the mirror HTML.
+    const S = "(?:\\\\?/)";
+    const re = new RegExp(
+      `${S}wp-content${S}uploads${S}\\d{4}${S}\\d{2}${S}${b}(?:-\\d+x\\d+)?\\.(?:png|jpe?g|webp)`,
+      "g",
+    );
+    out = out.replace(re, `/images/va/${qf}.jpg`);
+  }
+  // Rebrand the legacy vendor names in copy → QFusion.
+  out = out
+    .replace(/\b(?:Orion|ORION)\s+appointment/g, "QFusion appointments")
+    .replace(/\b(?:Orion|ORION)\b/g, "QFusion")
+    .replace(/Twana(?:&#8482;|&trade;|™)?/gi, "QFusion")
+    .replace(/SmartWait(?:&#8482;|&trade;|™)?/gi, "QFusion")
+    .replace(/SmartKiosk(?:&#8482;|&trade;|™)?/gi, "QFusion kiosk")
+    .replace(/\bESII\b/g, "QFusion");
+  // QFusion CTA on the 5 Visitor Assist pages, before the footer.
+  const VA_SLUGS = [
+    "queue-management-system",
+    "digital-ticket",
+    "online-appointment",
+    "satisfaction-survey",
+    "corporate-reception-solution",
+  ];
+  if (
+    VA_SLUGS.some((s) => pathname === `/${s}/` || pathname === `/${s}`) &&
+    out.includes("<footer")
+  ) {
+    const vaCta =
+      `<div style="background:#F4F7FB;border-top:1px solid #E2E8F2;padding:18px 20px;text-align:center;` +
+      `font-family:Inter,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:1.6;color:#1B2A4A;">` +
+      `Visitor Assist is powered by <strong>QFusion</strong>, our own real-time queue platform. ` +
+      `<a href="https://app.qfusion.ai" target="_blank" rel="noopener noreferrer" style="color:#003E9E;font-weight:600;text-decoration:none;">Explore QFusion →</a>` +
+      `</div>`;
+    out = out.replace(/<footer\b/i, vaCta + "<footer");
   }
   // 1e. Sitewide internal links to the new React landing pages, injected
   //     just before the footer on every mirror page. The mirror pages are
