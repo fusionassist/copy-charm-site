@@ -8,6 +8,11 @@ Format inspired by [keepachangelog.com](https://keepachangelog.com/en/1.1.0/); n
 
 ## [Unreleased]
 
+### Changed — 2026-08-18 — Complete UHB drawing set + TNI brochure (downloads now beat the Allsee page)
+
+Found the FULL TNI drawing sets in Dropbox (`UHB panel---horizontal/vertical design/` — every size, both orientations, unbranded): the TNI page now offers **10 technical drawings** (43/49/55/65/75 × landscape+portrait) replacing the 3 mixed-revision one-offs, plus the proper **TNI brochure** (was the older 55/65-only non-TNI one; same URL, content swapped). The 4K page gets the brochure too. Spec corrections from the drawing set: 55" VESA is 400×400 (not 400×200/400×400); 65" is 1450.4×825.4mm VESA **600×400**; 75" is 1672.6×951.6mm VESA **600×400** (price-file dims were off). Downloads: 15 documents on the TNI page vs Allsee's 11 on their equivalent.
+
+
 ### Added — 2026-08-18 — Real install photos on the UHB pages
 
 Seven real Irish window-display installs (from Dropbox `All_Screens_Application\Window Displays`, resized to ≤1400px/~250KB each) now lead the UHB TNI gallery — Neylon's Pharmacy, Domino's, Head|Office hairdressing, Renaissance Aesthetics, Bettystown Library (Meath CoCo), Kells Swimming Pool, TEN10 café — with the hero switched from render to the Neylon's install and a social-proof line added to the copy. Two installs added to the 4K page gallery. Skipped one otherwise-good photo at the client's request. NOTE for future kits: `All_Screens_Application/` has per-category real-install folders — use them; installs-first galleries are the anti-Allsee move (their pages use renders).
