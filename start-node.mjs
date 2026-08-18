@@ -971,6 +971,35 @@ function rewriteMirrorHtml(html, pathname = "") {
     );
     out = out.replace(re, `/images/va/${qf}.jpg`);
   }
+  // Retire the ESII-only bits that aren't QFusion features and lean into the
+  // qfusion.ie public-service positioning.
+  out = out
+    .replace(/Events Management/g, "SMS Notifications")
+    .replace(/Events management/g, "SMS notifications")
+    .replace(
+      /Orion Event allows you to easily manage and organize your events on your website\. Insert the registration form online using an iframe and allow your visitors to register according to the conditions you have set\./g,
+      "QFusion keeps visitors informed by SMS — a text when their turn is near, plus appointment reminders and confirmations. Fewer missed turns and shorter queues, whether it's a hospital clinic, a county council or a motor-tax office.",
+    )
+    .replace(/a video and audio conversation begins/g, "the visitor is connected to the right person")
+    .replace(/To issue an access badge with photo\./g, "To log and manage every visitor on site.");
+  // Strip the discontinued Customer Counting + Vending tiles from the WP/
+  // Elementor Visitor Assist mega-menu (same self-contained wpr-promo-box
+  // pattern as the mirror-product removal; both URLs also 301 in resolveRedirect).
+  for (const { slug, title } of [
+    { slug: "customer-counting-solution", title: "Customer Counting" },
+    { slug: "vending-machines", title: "Interactive Vending" },
+  ]) {
+    if (!out.includes(`${slug}/`)) continue;
+    const tileRe = new RegExp(
+      `<div class="elementor-element[^"]*elementor-widget-wpr-promo-box"[^>]*>` +
+        `(?:(?!<div class="elementor-element)[\\s\\S])*?` +
+        `href="[^"]*${slug}/"` +
+        `(?:(?!<div class="elementor-element)[\\s\\S])*?` +
+        `<h3 class="wpr-promo-box-title"><span>${title}</span></h3>\\s*</div>\\s*</div>\\s*</div>`,
+      "g",
+    );
+    out = out.replace(tileRe, "");
+  }
   // Rebrand the legacy vendor names in copy → QFusion.
   out = out
     .replace(/\b(?:Orion|ORION)\s+appointment/g, "QFusion appointments")
@@ -992,10 +1021,12 @@ function rewriteMirrorHtml(html, pathname = "") {
     out.includes("<footer")
   ) {
     const vaCta =
-      `<div style="background:#F4F7FB;border-top:1px solid #E2E8F2;padding:18px 20px;text-align:center;` +
-      `font-family:Inter,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:1.6;color:#1B2A4A;">` +
-      `Visitor Assist is powered by <strong>QFusion</strong>, our own real-time queue platform. ` +
-      `<a href="https://app.qfusion.ai" target="_blank" rel="noopener noreferrer" style="color:#003E9E;font-weight:600;text-decoration:none;">Explore QFusion →</a>` +
+      `<div style="background:#0B2A5B;color:#ffffff;padding:30px 20px;text-align:center;` +
+      `font-family:Inter,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;line-height:1.6;">` +
+      `<div style="font-size:20px;font-weight:800;">QFusion — built for Ireland's public services</div>` +
+      `<div style="max-width:660px;margin:10px auto 18px;font-size:15px;color:#D7E2F4;">Shorter queues, happier visitors. Trusted across hospitals, county councils, motor-tax and social-welfare offices — bilingual (English &amp; Gaeilge), cloud-based and real-time.</div>` +
+      `<a href="https://qfusion.ie" target="_blank" rel="noopener noreferrer" style="display:inline-block;background:#ffffff;color:#0B2A5B;font-weight:700;text-decoration:none;padding:11px 22px;border-radius:8px;margin:4px 6px;">Visit qfusion.ie →</a>` +
+      `<a href="https://app.qfusion.ai" target="_blank" rel="noopener noreferrer" style="display:inline-block;border:1px solid rgba(255,255,255,0.45);color:#ffffff;font-weight:700;text-decoration:none;padding:11px 22px;border-radius:8px;margin:4px 6px;">Try the platform</a>` +
       `</div>`;
     out = out.replace(/<footer\b/i, vaCta + "<footer");
   }
