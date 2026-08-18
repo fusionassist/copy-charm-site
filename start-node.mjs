@@ -944,9 +944,10 @@ function rewriteMirrorHtml(html, pathname = "") {
     "TicketVirtuel-388x388-2": "qms-digital-ticket",
     "ticket-virtuel-ticket-appel": "ticket-app",
     "Reception-Mobile": "qms-mobile",
-    "digital-smartphone-ticket-1-1": "digital-ticket",
+    "digital-smartphone-ticket-1-1": "ticket-qrcode",
     "digital-smartphone-ticket-1": "digital-ticket",
-    "digital-smartphone-ticket": "digital-ticket",
+    "digital-smartphone-ticket": "ticket-app",
+    "trio-touch": "qms-kiosks",
     "online-appointment-solution-2": "online-appointment",
     "online-appointment-solution-1": "oa-receive",
     "online-appointment-solution": "online-appointment",
@@ -1008,7 +1009,6 @@ function rewriteMirrorHtml(html, pathname = "") {
     .replace(/SmartWait(?:&#8482;|&trade;|™)?/gi, "QFusion")
     .replace(/SmartKiosk(?:&#8482;|&trade;|™)?/gi, "QFusion kiosk")
     .replace(/\bESII\b/g, "QFusion");
-  // QFusion CTA on the 5 Visitor Assist pages, before the footer.
   const VA_SLUGS = [
     "queue-management-system",
     "digital-ticket",
@@ -1016,10 +1016,23 @@ function rewriteMirrorHtml(html, pathname = "") {
     "satisfaction-survey",
     "corporate-reception-solution",
   ];
-  if (
-    VA_SLUGS.some((s) => pathname === `/${s}/` || pathname === `/${s}`) &&
-    out.includes("<footer")
-  ) {
+  const onVaPage = VA_SLUGS.some((s) => pathname === `/${s}/` || pathname === `/${s}`);
+  // Remove the legacy ESII YouTube video widget (Elementor video.default) and
+  // its dark-blue container from the VA pages. First strip the container that
+  // holds only the video (removes the empty dark box), then any bare widget.
+  if (onVaPage) {
+    out = out
+      .replace(
+        /<div class="elementor-element[^"]*e-con[^"]*"[^>]*data-element_type="container"[^>]*>\s*<div class="elementor-element[^"]*elementor-widget-video"[^>]*>\s*<div class="elementor-wrapper[^"]*">\s*<div class="elementor-video">\s*<\/div>\s*<\/div>\s*<\/div>\s*<\/div>/g,
+        "",
+      )
+      .replace(
+        /<div class="elementor-element[^"]*elementor-widget-video"[^>]*>\s*<div class="elementor-wrapper[^"]*">\s*<div class="elementor-video">\s*<\/div>\s*<\/div>\s*<\/div>/g,
+        "",
+      );
+  }
+  // QFusion CTA on the 5 Visitor Assist pages, before the footer.
+  if (onVaPage && out.includes("<footer")) {
     const vaCta =
       `<div style="background:#0B2A5B;color:#ffffff;padding:30px 20px;text-align:center;` +
       `font-family:Inter,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;line-height:1.6;">` +
