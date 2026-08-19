@@ -374,6 +374,32 @@ function resolveRedirect(pathname, search) {
   if (windowDisplayRedirects[pathname]) {
     return { target: windowDisplayRedirects[pathname], status: 301 };
   }
+  // Legacy commercial LANDING pages (non-/product/) that the old Google Ads
+  // + organic history still point at — all 404 today (verified 2026-08-19
+  // via the Ads query→URL history). These are money pages the /product/*
+  // scan didn't catch. 301 each to the closest live page to stop the 404
+  // bleed and recover equity. NOTE: the sector/grant ones are interim
+  // targets — when the dedicated DSD sector/grant pages are built
+  // (docs/COMPETITIVE-DSD-PLAN.md) just retarget these 301s to them.
+  const legacyLandingRedirects = {
+    "/retail-food-drink-digital-signage": "/digital-signage",
+    "/retail-food-drink-digital-signage/": "/digital-signage",
+    "/hospitality-retail-screens": "/digital-signage",
+    "/hospitality-retail-screens/": "/digital-signage",
+    "/promethean-activpanels": "/product-category/interactive/",
+    "/promethean-activpanels/": "/product-category/interactive/",
+    "/promethean-activpanels-for-schools": "/digital-signage-for-schools",
+    "/promethean-activpanels-for-schools/": "/digital-signage-for-schools",
+    "/touch-screen-freestanding-kiosk-for-retail-hotels-expo-commercial": "/product-category/touchscreen/",
+    "/touch-screen-freestanding-kiosk-for-retail-hotels-expo-commercial/": "/product-category/touchscreen/",
+    "/education": "/digital-signage-for-schools",
+    "/education/": "/digital-signage-for-schools",
+    "/ict-grants-equipment": "/digital-signage-for-schools",
+    "/ict-grants-equipment/": "/digital-signage-for-schools",
+  };
+  if (legacyLandingRedirects[pathname]) {
+    return { target: legacyLandingRedirects[pathname], status: 301 };
+  }
   // Discontinued "mirror" products removed 2026-08-06 (Mirror Touch Screen +
   // AR Mirror). 301 their legacy /product/* URLs to Screen Solutions so any
   // indexed or externally-linked URLs don't dead-end. The mega-menu/grid
