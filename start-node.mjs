@@ -2450,6 +2450,11 @@ async function handleContact(request) {
       html,
       replyTo: lead.email,
     });
+    // Log every successful lead so real lead volume is visible in app.log
+    // (was silent — made diagnosing the 2026-08 lead drop impossible).
+    console.log(
+      `[contact] LEAD OK: ${lead.name} <${lead.email}>${lead.company ? " (" + lead.company + ")" : ""} — graph ${result.status}`,
+    );
     return new Response(JSON.stringify({ success: true, messageStatus: result.status }), {
       status: 200,
       headers: { "content-type": "application/json" },
