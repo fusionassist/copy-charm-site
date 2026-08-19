@@ -1473,11 +1473,16 @@ function rewriteMirrorHtml(html, pathname = "") {
 
   // 8. Modern site chrome — hide the legacy Elementor header/footer and
   //    inject the React <Nav>/<Footer> clone so every mirror page matches
-  //    the React-rendered pages. Runs last so earlier content rewrites act
-  //    on the original markup, never on the injected chrome. Gated on the
-  //    presence of the Elementor header so it only fires on real front-end
-  //    pages (not partials / non-page mirror responses).
-  if (out.includes("elementor-location-header")) {
+  //    the React-rendered pages.
+  //    ROLLED BACK 2026-08-19 (Gerry, live): the injected nav rendered
+  //    broken for him (Screen Solutions reduced, Services/Visitor Assist
+  //    dropdowns missing) — the legacy Elementor header shows through
+  //    alongside a partly-unstyled modern one. Disabled so every mirror
+  //    page serves its ORIGINAL Elementor header/footer, exactly as before
+  //    tonight's deploys. The 301 redirect fixes are unrelated and stay.
+  //    Re-do the chrome via a staging/preview flow, not straight to prod.
+  const MODERN_CHROME_ENABLED = false;
+  if (MODERN_CHROME_ENABLED && out.includes("elementor-location-header")) {
     if (out.includes("</head>")) {
       out = out.replace("</head>", MODERN_CHROME_CSS + "</head>");
     } else {
