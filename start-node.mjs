@@ -719,6 +719,190 @@ function buildAdsLeadConversionSnippet() {
 }
 const ADS_LEAD_CONVERSION_SNIPPET = buildAdsLeadConversionSnippet();
 
+// ---------------------------------------------------------------------------
+// Modern site chrome (header + mega menu + footer) for the wp-mirror pages.
+// The migration only moved ~7 URLs to React (which render <Nav>/<Footer>);
+// every other page still shipped the old Elementor header/footer, so the
+// site looked like two different sites — the #1 complaint. This injects a
+// self-contained HTML+CSS clone of the React <Nav>/<Footer> into every
+// mirror page and hides the legacy Elementor header (id 229) + footer
+// (id 267), unifying the whole site on the modern design. Desktop menus are
+// pure CSS hover/focus (no framework); one tiny inline script drives the
+// mobile hamburger. Everything is namespaced under .idi-mm / .idi-mf so it
+// can't collide with (or be broken by) legacy WP/Elementor CSS. Keep the
+// MENU here in sync with src/components/nav/Nav.tsx and Footer.tsx.
+const CHROME_YEAR = new Date().getFullYear();
+
+const MODERN_CHROME_CSS =
+  '<style id="idi-modern-chrome">' +
+  "header.elementor-location-header,footer.elementor-location-footer{display:none!important}" +
+  ".idi-mm *,.idi-mf *{box-sizing:border-box}" +
+  '.idi-mm{position:sticky;top:0;z-index:99999;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}' +
+  ".idi-mm a{text-decoration:none}" +
+  ".idi-mm-bar{background:#fff;border-bottom:1px solid #e5e7eb}" +
+  ".idi-mm-in{max-width:80rem;margin:0 auto;height:64px;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:0 24px}" +
+  ".idi-mm-logo{display:flex;align-items:center}" +
+  ".idi-mm-logo img{height:40px;width:auto;display:block}" +
+  ".idi-mm-menu{list-style:none;margin:0;padding:0;display:flex;align-items:center;gap:2px}" +
+  ".idi-mm-menu>li{position:relative}" +
+  ".idi-mm-menu>li>a{display:inline-flex;align-items:center;gap:5px;border-radius:6px;padding:8px 12px;font-size:14px;font-weight:500;line-height:1;color:#1f2937;transition:background .15s,color .15s}" +
+  ".idi-mm-menu>li>a:hover{background:#f1f5f9;color:#0f172a}" +
+  ".idi-mm-chev{width:12px;height:12px;opacity:.55;flex:none}" +
+  ".idi-mm-panel{position:absolute;top:100%;padding-top:8px;visibility:hidden;opacity:0;transition:opacity .15s;z-index:50}" +
+  ".idi-mm-menu>li:hover .idi-mm-panel,.idi-mm-menu>li:focus-within .idi-mm-panel{visibility:visible;opacity:1}" +
+  ".idi-mm-drop{left:0}" +
+  ".idi-mm-drop-in{list-style:none;margin:0;padding:8px 0;min-width:256px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 12px 34px rgba(2,6,23,.14)}" +
+  ".idi-mm-drop-in a{display:block;padding:8px 16px;font-size:14px;color:#1f2937}" +
+  ".idi-mm-drop-in a:hover{background:#f1f5f9;color:#0f172a}" +
+  ".idi-mm-mega{left:50%;transform:translateX(-50%)}" +
+  ".idi-mm-mega-in{width:820px;max-width:calc(100vw - 32px);background:#fff;border:1px solid #e5e7eb;border-radius:14px;box-shadow:0 24px 48px rgba(2,6,23,.18);padding:12px}" +
+  ".idi-mm-tiles{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(5,1fr);gap:10px}" +
+  ".idi-mm-tile{position:relative;display:block;aspect-ratio:4/3;border-radius:10px;overflow:hidden;box-shadow:0 0 0 1px rgba(0,0,0,.05)}" +
+  ".idi-mm-tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .3s}" +
+  ".idi-mm-tile:hover img{transform:scale(1.08)}" +
+  ".idi-mm-tile .g{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,43,122,.95),rgba(0,43,122,.42) 45%,rgba(0,43,122,.05))}" +
+  ".idi-mm-tile .c{position:absolute;left:0;right:0;bottom:0;padding:8px;font-size:12px;font-weight:600;line-height:1.15;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.45)}" +
+  ".idi-mm-act{display:flex;align-items:center;gap:8px}" +
+  ".idi-mm-cta{display:inline-flex;align-items:center;justify-content:center;height:36px;padding:0 15px;border-radius:6px;background:#002B7A;color:#fff!important;font-size:14px;font-weight:500}" +
+  ".idi-mm-cta:hover{background:#003E9E}" +
+  ".idi-mm-burger{display:none;width:38px;height:38px;align-items:center;justify-content:center;border:0;background:transparent;color:#1f2937;border-radius:6px;cursor:pointer}" +
+  ".idi-mm-mob{display:none}" +
+  "@media(max-width:1023px){" +
+  ".idi-mm-nav{display:none}.idi-mm-cta{display:none}.idi-mm-burger{display:inline-flex}" +
+  ".idi-mm-mob{border-top:1px solid #e5e7eb;background:#fff}.idi-mm-mob.open{display:block}" +
+  ".idi-mm-mob ul{list-style:none;margin:0;padding:6px 24px}" +
+  ".idi-mm-mob>ul>li{border-top:1px solid #eef2f7;padding:2px 0}.idi-mm-mob>ul>li:first-child{border-top:0}" +
+  ".idi-mm-mob a{display:block;padding:8px 0;font-size:14px;font-weight:600;color:#0f172a}" +
+  ".idi-mm-mob .sub a{padding:5px 0 5px 12px;font-weight:400;font-size:13px;color:#475569}" +
+  ".idi-mm-mob .m-cta{color:#002B7A}" +
+  "}" +
+  '.idi-mf{background:#002B7A;color:#fff;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;margin-top:80px}' +
+  ".idi-mf a{color:rgba(255,255,255,.8);text-decoration:none}.idi-mf a:hover{color:#fff}" +
+  ".idi-mf-in{max-width:80rem;margin:0 auto;padding:48px 24px}" +
+  ".idi-mf-grid{display:grid;grid-template-columns:1fr;gap:40px}" +
+  "@media(min-width:768px){.idi-mf-grid{grid-template-columns:repeat(2,1fr)}}" +
+  "@media(min-width:1024px){.idi-mf-grid{grid-template-columns:repeat(4,1fr)}}" +
+  ".idi-mf img{height:40px;width:auto;display:block}" +
+  ".idi-mf .blurb{margin:16px 0 0;font-size:14px;color:rgba(255,255,255,.8);line-height:1.5}" +
+  ".idi-mf .addr{margin:16px 0 0;font-size:12px;color:rgba(255,255,255,.6)}" +
+  ".idi-mf h2{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#2CD1ED;margin:0 0 16px}" +
+  ".idi-mf ul{list-style:none;margin:0;padding:0}.idi-mf ul li{margin-bottom:12px;font-size:14px}" +
+  ".idi-mf .hours{font-size:12px;color:rgba(255,255,255,.6)}" +
+  ".idi-mf-bot{max-width:80rem;margin:0 auto;padding:24px;border-top:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column;gap:16px;font-size:12px;color:rgba(255,255,255,.6)}" +
+  ".idi-mf-bot ul{display:flex;gap:24px;list-style:none;margin:0;padding:0}" +
+  "@media(min-width:640px){.idi-mf-bot{flex-direction:row;align-items:center;justify-content:space-between}}" +
+  "</style>";
+
+const CHROME_CHEV =
+  '<svg class="idi-mm-chev" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+// Screen Solutions mega tiles — [label, href, image] — mirrors Nav.tsx.
+const CHROME_MEGA_TILES = [
+  ["Digital Signage", "/digital-signage", "moy-ds60-portrait.jpg"],
+  ["Digital Menu Screens", "/product/network-menu-boards", "menu-screens-install-3.jpg"],
+  ["LED Video Walls", "/product-category/led/", "category-led.jpg"],
+  ["GAA LED Scoreboards", "/product/gaa-led-scoreboards", "cluscore-hero.jpg"],
+  ["Interactive Displays", "/product-category/interactive/", "category-interactive.jpg"],
+  ["Touchscreens &amp; Kiosks", "/product-category/touchscreen/", "category-touchscreen.jpg"],
+  ["Outdoor Displays", "/product-category/outdoor/", "category-outdoor.jpg"],
+  ["Indoor Displays", "/product-category/indoor/", "category-indoor.jpg"],
+  ["Self-Ordering Kiosks", "/product-category/self-ordering/", "category-self-ordering.jpg"],
+  ["Professional Displays — Android", "/product/android-network-display", "moy-ds60-hero.jpg"],
+];
+
+const CHROME_MEGA_HTML = CHROME_MEGA_TILES.map(
+  ([label, href, img]) =>
+    '<li><a class="idi-mm-tile" href="' + href + '"><img src="/images/screens/' + img +
+    '" alt="" aria-hidden="true" loading="lazy"><span class="g"></span><span class="c">' + label + "</span></a></li>",
+).join("");
+
+const MODERN_CHROME_HEADER =
+  '<div class="idi-mm"><header class="idi-mm-bar"><div class="idi-mm-in">' +
+  '<a href="/" class="idi-mm-logo" aria-label="Interactive Displays Ireland — home"><img src="/brand/idi-logo-color.png" alt="Interactive Displays Ireland" width="180" height="48"></a>' +
+  '<nav class="idi-mm-nav" aria-label="Primary"><ul class="idi-mm-menu">' +
+  '<li><a href="/">Home</a></li>' +
+  '<li><a href="/screen-solutions/">Screen Solutions ' + CHROME_CHEV + "</a>" +
+  '<div class="idi-mm-panel idi-mm-mega"><div class="idi-mm-mega-in"><ul class="idi-mm-tiles">' + CHROME_MEGA_HTML + "</ul></div></div></li>" +
+  '<li><a href="/supply-installation/">Services ' + CHROME_CHEV + "</a>" +
+  '<div class="idi-mm-panel idi-mm-drop"><ul class="idi-mm-drop-in">' +
+  '<li><a href="/supply-installation/">Supply &amp; Installation</a></li>' +
+  '<li><a href="/training-support/">Training &amp; Support</a></li>' +
+  '<li><a href="/content-management-creation/">Content Management &amp; Creation</a></li>' +
+  "</ul></div></li>" +
+  '<li><a href="/queue-management-system/">Visitor Assist ' + CHROME_CHEV + "</a>" +
+  '<div class="idi-mm-panel idi-mm-drop"><ul class="idi-mm-drop-in">' +
+  '<li><a href="/queue-management-system/">Queue Management System</a></li>' +
+  '<li><a href="/digital-ticket/">Digital Ticketing</a></li>' +
+  '<li><a href="/online-appointment/">Online Appointment</a></li>' +
+  '<li><a href="/satisfaction-survey/">Satisfaction Survey</a></li>' +
+  '<li><a href="/corporate-reception-solution/">Corporate Reception</a></li>' +
+  "</ul></div></li>" +
+  '<li><a href="/careers/">Careers</a></li>' +
+  "</ul></nav>" +
+  '<div class="idi-mm-act"><a class="idi-mm-cta" href="/contact-us">Get In Touch</a>' +
+  '<button type="button" class="idi-mm-burger" aria-label="Open menu" aria-expanded="false" onclick="idiMM()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></div>' +
+  "</div>" +
+  '<nav class="idi-mm-mob" id="idiMob" aria-label="Mobile"><ul>' +
+  '<li><a href="/">Home</a></li>' +
+  '<li><a href="/screen-solutions/">Screen Solutions</a><ul class="sub">' +
+  '<li><a href="/digital-signage">Digital Signage</a></li>' +
+  '<li><a href="/digital-menu-boards">Digital Menu Boards</a></li>' +
+  '<li><a href="/product/network-menu-boards">Digital Menu Screens</a></li>' +
+  '<li><a href="/product-category/interactive/">Interactive Displays</a></li>' +
+  '<li><a href="/product-category/touchscreen/">Touchscreens &amp; Kiosks</a></li>' +
+  '<li><a href="/product-category/outdoor/">Outdoor Displays</a></li>' +
+  '<li><a href="/product-category/indoor/">Indoor Displays</a></li>' +
+  '<li><a href="/product-category/led/">LED Video Walls</a></li>' +
+  '<li><a href="/product/gaa-led-scoreboards">GAA LED Scoreboards</a></li>' +
+  '<li><a href="/product-category/self-ordering/">Self-Ordering Kiosks</a></li>' +
+  '<li><a href="/product-category/high-brightness/">High-Brightness Displays</a></li>' +
+  '<li><a href="/product/android-network-display">Professional Displays — Android</a></li>' +
+  "</ul></li>" +
+  '<li><a href="/supply-installation/">Services</a><ul class="sub">' +
+  '<li><a href="/supply-installation/">Supply &amp; Installation</a></li>' +
+  '<li><a href="/training-support/">Training &amp; Support</a></li>' +
+  '<li><a href="/content-management-creation/">Content Management &amp; Creation</a></li>' +
+  "</ul></li>" +
+  '<li><a href="/queue-management-system/">Visitor Assist</a><ul class="sub">' +
+  '<li><a href="/queue-management-system/">Queue Management System</a></li>' +
+  '<li><a href="/digital-ticket/">Digital Ticketing</a></li>' +
+  '<li><a href="/online-appointment/">Online Appointment</a></li>' +
+  '<li><a href="/satisfaction-survey/">Satisfaction Survey</a></li>' +
+  '<li><a href="/corporate-reception-solution/">Corporate Reception</a></li>' +
+  "</ul></li>" +
+  '<li><a href="/careers/">Careers</a></li>' +
+  '<li><a class="m-cta" href="/contact-us">Get In Touch →</a></li>' +
+  "</ul></nav>" +
+  "</header></div>";
+
+const MODERN_CHROME_FOOTER =
+  '<footer class="idi-mf"><div class="idi-mf-in"><div class="idi-mf-grid">' +
+  '<div><a href="/" aria-label="Interactive Displays Ireland — home"><img src="/brand/idi-logo-white.png" alt="Interactive Displays Ireland" width="200" height="52"></a>' +
+  '<p class="blurb">Digital signage, interactive displays, kiosks and AV solutions for retail, hospitality, education and corporate Ireland.</p>' +
+  '<p class="addr">Dromone, Oldcastle, Co. Meath, Ireland A82&nbsp;E0W4</p></div>' +
+  "<div><h2>Company</h2><ul>" +
+  '<li><a href="/">Solutions</a></li><li><a href="/shop/">Products</a></li><li><a href="/brand/moytronix/">Brands</a></li>' +
+  '<li><a href="/insights/">Insights</a></li><li><a href="/careers/">Careers</a></li><li><a href="/contact-us">Contact us</a></li>' +
+  "</ul></div>" +
+  "<div><h2>Insights</h2><ul>" +
+  '<li><a href="/choosing-the-right-digital-signage/">Choosing the right digital signage</a></li>' +
+  '<li><a href="/outdoor-digital-signage-in-ireland/">Outdoor digital signage in Ireland</a></li>' +
+  '<li><a href="/interactive-whiteboards-in-schools/">Interactive whiteboards in schools</a></li>' +
+  '<li><a href="/customer-counting-solution/">Customer counting solution</a></li>' +
+  "</ul></div>" +
+  "<div><h2>Get in touch</h2><ul>" +
+  '<li><a href="mailto:sales@interactivedisplays.ie">sales@interactivedisplays.ie</a></li>' +
+  '<li><a href="tel:+353449672855">+353 44 967 2855</a></li>' +
+  '<li class="hours">Mon–Fri, 09:00–17:30 IST</li>' +
+  "</ul></div>" +
+  "</div></div>" +
+  '<div class="idi-mf-bot"><p>© ' + CHROME_YEAR + " Interactive Displays Ireland. All rights reserved.</p>" +
+  '<ul><li><a href="/privacy-policy">Privacy policy</a></li><li><a href="/terms">Terms of service</a></li></ul></div>' +
+  "</footer>";
+
+const MODERN_CHROME_SCRIPT =
+  "<script>function idiMM(){var m=document.getElementById('idiMob'),b=document.querySelector('.idi-mm-burger');if(!m)return;var o=m.classList.toggle('open');if(b){b.setAttribute('aria-expanded',o?'true':'false');}}</script>";
+
 // Legacy Tawk.to chat is baked into the wget mirror HTML. The migration
 // dropped Tawk entirely in favour of Odoo Live Chat, so strip every
 // trace of it from mirror responses.
@@ -1208,6 +1392,25 @@ function rewriteMirrorHtml(html, pathname = "") {
     out = out.includes("</head>")
       ? out.replace("</head>", hideCss + "</head>")
       : out + hideCss;
+  }
+
+  // 8. Modern site chrome — hide the legacy Elementor header/footer and
+  //    inject the React <Nav>/<Footer> clone so every mirror page matches
+  //    the React-rendered pages. Runs last so earlier content rewrites act
+  //    on the original markup, never on the injected chrome. Gated on the
+  //    presence of the Elementor header so it only fires on real front-end
+  //    pages (not partials / non-page mirror responses).
+  if (out.includes("elementor-location-header")) {
+    if (out.includes("</head>")) {
+      out = out.replace("</head>", MODERN_CHROME_CSS + "</head>");
+    } else {
+      out = MODERN_CHROME_CSS + out;
+    }
+    out = out.replace(/(<body[^>]*>)/i, "$1" + MODERN_CHROME_HEADER);
+    const footer = MODERN_CHROME_FOOTER + MODERN_CHROME_SCRIPT;
+    out = out.includes("</body>")
+      ? out.replace("</body>", footer + "</body>")
+      : out + footer;
   }
   return out;
 }
