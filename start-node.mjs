@@ -802,22 +802,30 @@ const MODERN_CHROME_CSS =
   '.idi-mm{position:sticky;top:0;z-index:99999;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}' +
   ".idi-mm a{text-decoration:none}" +
   ".idi-mm-bar{background:#fff;border-bottom:1px solid #e5e7eb}" +
-  ".idi-mm-in{max-width:80rem;margin:0 auto;height:64px;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:0 24px}" +
+  ".idi-mm-in{max-width:80rem;margin:0 auto;height:72px;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:0 24px}" +
   ".idi-mm-logo{display:flex;align-items:center}" +
-  ".idi-mm-logo img{height:40px;width:auto;display:block}" +
+  ".idi-mm-logo img{height:46px;width:auto;display:block}" +
   ".idi-mm-menu{list-style:none;margin:0;padding:0;display:flex;align-items:center;gap:2px}" +
   ".idi-mm-menu>li{position:relative}" +
-  ".idi-mm-menu>li>a{display:inline-flex;align-items:center;gap:5px;border-radius:6px;padding:8px 12px;font-size:14px;font-weight:500;line-height:1;color:#1f2937;transition:background .15s,color .15s}" +
+  ".idi-mm-menu>li>a{display:inline-flex;align-items:center;gap:5px;border-radius:6px;padding:10px 15px;font-size:15.5px;font-weight:600;line-height:1;color:#1f2937;transition:background .15s,color .15s}" +
   ".idi-mm-menu>li>a:hover{background:#f1f5f9;color:#0f172a}" +
   ".idi-mm-chev{width:12px;height:12px;opacity:.55;flex:none}" +
   ".idi-mm-panel{position:absolute;top:100%;padding-top:8px;visibility:hidden;opacity:0;transition:opacity .15s;z-index:50}" +
-  ".idi-mm-menu>li:hover .idi-mm-panel,.idi-mm-menu>li:focus-within .idi-mm-panel{visibility:visible;opacity:1}" +
+  ".idi-mm-menu>li:hover .idi-mm-panel,.idi-mm-menu>li:focus-within .idi-mm-panel{visibility:visible!important;opacity:1!important}" +
   ".idi-mm-drop{left:0}" +
-  ".idi-mm-drop-in{list-style:none;margin:0;padding:8px 0;min-width:256px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 12px 34px rgba(2,6,23,.14)}" +
-  ".idi-mm-drop-in a{display:block;padding:8px 16px;font-size:14px;color:#1f2937}" +
+  ".idi-mm-drop-in{list-style:none;margin:0;padding:10px 0;min-width:288px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 12px 34px rgba(2,6,23,.14)}" +
+  ".idi-mm-drop-in a{display:block!important;padding:11px 20px;font-size:15px;color:#1f2937}" +
   ".idi-mm-drop-in a:hover{background:#f1f5f9;color:#0f172a}" +
   ".idi-mm-mega{left:50%;transform:translateX(-50%)}" +
-  ".idi-mm-mega-in{width:820px;max-width:calc(100vw - 32px);background:#fff;border:1px solid #e5e7eb;border-radius:14px;box-shadow:0 24px 48px rgba(2,6,23,.18);padding:12px}" +
+  ".idi-mm-mega-in{width:1000px;max-width:calc(100vw - 32px);background:#fff;border:1px solid #e5e7eb;border-radius:14px;box-shadow:0 24px 48px rgba(2,6,23,.18);padding:22px}" +
+  ".idi-mm-cols{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr)) 210px;gap:26px;align-items:start}" +
+  ".idi-mm-col{display:flex;flex-direction:column;gap:11px}" +
+  ".idi-mm-col>a{display:block!important;font-size:14.5px;color:#334155;line-height:1.3;text-decoration:none}" +
+  ".idi-mm-col>a:hover{color:#002B7A}" +
+  ".idi-mm-col-h{font-size:12px!important;font-weight:700!important;text-transform:uppercase;letter-spacing:.04em;color:#002B7A!important;padding-bottom:9px;margin-bottom:2px;border-bottom:2px solid #eef2f7}" +
+  ".idi-mm-feat{position:relative;display:block;border-radius:10px;overflow:hidden;min-height:200px;box-shadow:0 0 0 1px rgba(0,0,0,.05)}" +
+  ".idi-mm-feat img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}" +
+  ".idi-mm-feat-cap{position:absolute;left:0;right:0;bottom:0;padding:12px 14px;font-size:14.5px;font-weight:600;color:#fff;background:linear-gradient(to top,rgba(0,43,122,.96),rgba(0,43,122,0));text-shadow:0 1px 2px rgba(0,0,0,.4)}" +
   ".idi-mm-tiles{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(5,1fr);gap:10px}" +
   ".idi-mm-tile{position:relative;display:block;aspect-ratio:4/3;border-radius:10px;overflow:hidden;box-shadow:0 0 0 1px rgba(0,0,0,.05)}" +
   ".idi-mm-tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .3s}" +
@@ -825,7 +833,7 @@ const MODERN_CHROME_CSS =
   ".idi-mm-tile .g{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,43,122,.95),rgba(0,43,122,.42) 45%,rgba(0,43,122,.05))}" +
   ".idi-mm-tile .c{position:absolute;left:0;right:0;bottom:0;padding:8px;font-size:12px;font-weight:600;line-height:1.15;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.45)}" +
   ".idi-mm-act{display:flex;align-items:center;gap:8px}" +
-  ".idi-mm-cta{display:inline-flex;align-items:center;justify-content:center;height:36px;padding:0 15px;border-radius:6px;background:#002B7A;color:#fff!important;font-size:14px;font-weight:500}" +
+  ".idi-mm-cta{display:inline-flex;align-items:center;justify-content:center;height:42px;padding:0 20px;border-radius:6px;background:#002B7A;color:#fff!important;font-size:15px;font-weight:600}" +
   ".idi-mm-cta:hover{background:#003E9E}" +
   ".idi-mm-burger{display:none;width:38px;height:38px;align-items:center;justify-content:center;border:0;background:transparent;color:#1f2937;border-radius:6px;cursor:pointer}" +
   ".idi-mm-mob{display:none}" +
@@ -858,25 +866,32 @@ const MODERN_CHROME_CSS =
 const CHROME_CHEV =
   '<svg class="idi-mm-chev" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
-// Screen Solutions mega tiles — [label, href, image] — mirrors Nav.tsx.
-const CHROME_MEGA_TILES = [
-  ["Digital Signage", "/digital-signage", "moy-ds60-portrait.jpg"],
-  ["Digital Menu Screens", "/product/network-menu-boards", "menu-screens-install-3.jpg"],
-  ["LED Video Walls", "/product-category/led/", "category-led.jpg"],
-  ["GAA LED Scoreboards", "/product/gaa-led-scoreboards", "cluscore-hero.jpg"],
-  ["Interactive Displays", "/product-category/interactive/", "category-interactive.jpg"],
-  ["Touchscreens &amp; Kiosks", "/product-category/touchscreen/", "category-touchscreen.jpg"],
-  ["Outdoor Displays", "/product-category/outdoor/", "category-outdoor.jpg"],
-  ["Indoor Displays", "/product-category/indoor/", "category-indoor.jpg"],
-  ["Self-Ordering Kiosks", "/product-category/self-ordering/", "category-self-ordering.jpg"],
-  ["Professional Displays — Android", "/product/android-network-display", "moy-ds60-hero.jpg"],
-];
-
-const CHROME_MEGA_HTML = CHROME_MEGA_TILES.map(
-  ([label, href, img]) =>
-    '<li><a class="idi-mm-tile" href="' + href + '"><img src="/images/screens/' + img +
-    '" alt="" aria-hidden="true" loading="lazy"><span class="g"></span><span class="c">' + label + "</span></a></li>",
-).join("");
+// Screen Solutions mega — a TWO-LEVEL menu: category heading (level 1,
+// links to the category page) + its products/sub-links (level 2), matching
+// the old WP tabbed mega (Display / Touchscreen / Outdoor / High Brightness
+// / Interactive / Self-Ordering / LED) that the flat tile grid had lost.
+// Plus a featured image tile on the right. Keep in sync with Nav.tsx.
+const CHROME_MEGA_COLS =
+  '<div class="idi-mm-cols">' +
+  '<div class="idi-mm-col"><a class="idi-mm-col-h" href="/digital-signage">Signage &amp; Menu</a>' +
+  '<a href="/digital-signage">Digital Signage</a>' +
+  '<a href="/digital-menu-boards">Digital Menu Boards</a>' +
+  '<a href="/product/network-menu-boards">Digital Menu Screens</a>' +
+  '<a href="/product/android-network-display">Professional Displays — Android</a></div>' +
+  '<div class="idi-mm-col"><a class="idi-mm-col-h" href="/product-category/touchscreen/">Touch &amp; Interactive</a>' +
+  '<a href="/product-category/interactive/">Interactive Displays</a>' +
+  '<a href="/product-category/touchscreen/">Touchscreens &amp; Kiosks</a>' +
+  '<a href="/product-category/self-ordering/">Self-Ordering Kiosks</a></div>' +
+  '<div class="idi-mm-col"><a class="idi-mm-col-h" href="/screen-solutions/">Indoor &amp; Outdoor</a>' +
+  '<a href="/product-category/indoor/">Indoor Displays</a>' +
+  '<a href="/product-category/outdoor/">Outdoor Displays</a>' +
+  '<a href="/product-category/high-brightness/">High-Brightness Displays</a>' +
+  '<a href="/product/ultra-high-bright-display">UHB Window Displays</a></div>' +
+  '<div class="idi-mm-col"><a class="idi-mm-col-h" href="/product-category/led/">LED &amp; Video Walls</a>' +
+  '<a href="/product-category/led/">LED Video Walls</a>' +
+  '<a href="/product/gaa-led-scoreboards">GAA LED Scoreboards</a></div>' +
+  '<a class="idi-mm-feat" href="/screen-solutions/"><img src="/images/screens/moy-ds60-hero.jpg" alt="" aria-hidden="true" loading="lazy"><span class="idi-mm-feat-cap">All Screen Solutions →</span></a>' +
+  "</div>";
 
 const MODERN_CHROME_HEADER =
   '<div class="idi-mm"><header class="idi-mm-bar"><div class="idi-mm-in">' +
@@ -884,7 +899,7 @@ const MODERN_CHROME_HEADER =
   '<nav class="idi-mm-nav" aria-label="Primary"><ul class="idi-mm-menu">' +
   '<li><a href="/">Home</a></li>' +
   '<li><a href="/screen-solutions/">Screen Solutions ' + CHROME_CHEV + "</a>" +
-  '<div class="idi-mm-panel idi-mm-mega"><div class="idi-mm-mega-in"><ul class="idi-mm-tiles">' + CHROME_MEGA_HTML + "</ul></div></div></li>" +
+  '<div class="idi-mm-panel idi-mm-mega"><div class="idi-mm-mega-in">' + CHROME_MEGA_COLS + "</div></div></li>" +
   '<li><a href="/supply-installation/">Services ' + CHROME_CHEV + "</a>" +
   '<div class="idi-mm-panel idi-mm-drop"><ul class="idi-mm-drop-in">' +
   '<li><a href="/supply-installation/">Supply &amp; Installation</a></li>' +
