@@ -338,6 +338,42 @@ function resolveRedirect(pathname, search) {
   if (androidConsolidation[pathname]) {
     return { target: androidConsolidation[pathname], status: 301 };
   }
+  // Ultra High Brightness / window-facing display range — REGRESSION FIX
+  // (2026-08-19). The old site ranked #1 for "ultra high brightness window
+  // display in ireland" with a set of per-size + TNI + double-sided URLs.
+  // The rebuild put the new range page at a NEW slug
+  // (/product/ultra-high-bright-display) and left every OLD ranking URL to
+  // 404 (confirmed live via Wayback), so Google's accumulated equity was
+  // lost and the term fell to #3. The earlier androidConsolidation map even
+  // guessed the wrong legacy slug ("ultra-high-bright-display-tni", which
+  // never existed) and missed the real one ("ultra-bright-window-display-tni").
+  // 301 every real legacy URL to the new range page (it carries all 43–75"
+  // sizes + double-sided), consolidating the equity back.
+  const windowDisplayRedirects = {
+    "/product/ultra-bright-window-display-tni": "/product/ultra-high-bright-display",
+    "/product/ultra-bright-window-display-tni/": "/product/ultra-high-bright-display",
+    "/product/ultra-bright-window-display": "/product/ultra-high-bright-display",
+    "/product/ultra-bright-window-display/": "/product/ultra-high-bright-display",
+    "/high-bright-window-displays": "/product/ultra-high-bright-display",
+    "/high-bright-window-displays/": "/product/ultra-high-bright-display",
+    "/product/49-3000-high-brightness-window-facing-display": "/product/ultra-high-bright-display",
+    "/product/49-3000-high-brightness-window-facing-display/": "/product/ultra-high-bright-display",
+    "/product/55-3000-high-brightness-window-facing-display": "/product/ultra-high-bright-display",
+    "/product/55-3000-high-brightness-window-facing-display/": "/product/ultra-high-bright-display",
+    "/product/65-3000-high-brightness-window-facing-display": "/product/ultra-high-bright-display",
+    "/product/65-3000-high-brightness-window-facing-display/": "/product/ultra-high-bright-display",
+    "/product/49-3000700-double-sided-high-brightness-window-facing": "/product/ultra-high-bright-display",
+    "/product/49-3000700-double-sided-high-brightness-window-facing/": "/product/ultra-high-bright-display",
+    "/product/55-3000700-double-sided-high-brightness-window-facing-display": "/product/ultra-high-bright-display",
+    "/product/55-3000700-double-sided-high-brightness-window-facing-display/": "/product/ultra-high-bright-display",
+    "/product/dual-sided-window-display": "/product/ultra-high-bright-display",
+    "/product/dual-sided-window-display/": "/product/ultra-high-bright-display",
+    "/hanging-double-sided-window-displays-2": "/product/ultra-high-bright-display",
+    "/hanging-double-sided-window-displays-2/": "/product/ultra-high-bright-display",
+  };
+  if (windowDisplayRedirects[pathname]) {
+    return { target: windowDisplayRedirects[pathname], status: 301 };
+  }
   // Discontinued "mirror" products removed 2026-08-06 (Mirror Touch Screen +
   // AR Mirror). 301 their legacy /product/* URLs to Screen Solutions so any
   // indexed or externally-linked URLs don't dead-end. The mega-menu/grid
