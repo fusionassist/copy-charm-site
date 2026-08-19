@@ -691,6 +691,34 @@ function buildRecaptchaMirrorSnippet() {
 }
 const RECAPTCHA_MIRROR_SNIPPET = buildRecaptchaMirrorSnippet();
 
+// Google Ads lead conversion for the legacy Elementor forms baked into the
+// mirror (the enquiry form on product/solution pages + the careers form).
+// The React lead form fires its own conversion via src/lib/track.ts; the
+// mirror forms submit through Elementor's own AJAX handler and never did,
+// so paid clicks that converted on a mirror page went uncounted — the
+// single biggest hole in IDI's conversion measurement after the rebuild.
+// Elementor triggers a jQuery `submit_success` event on the form when
+// admin-ajax returns success; we delegate-bind on that and ping the same
+// AW-<id>/<label> conversion the React form uses. Inert unless both ads
+// env vars are set; gated in-page on window.gtag so it no-ops if the
+// tracking snippet didn't load.
+function buildAdsLeadConversionSnippet() {
+  const ads = process.env.VITE_PUBLIC_GOOGLE_ADS_ID;
+  const label = process.env.VITE_PUBLIC_GOOGLE_ADS_LEAD_LABEL;
+  if (!ads || !label) return "";
+  const sendTo = ads + "/" + label;
+  return (
+    "<script>(function(){" +
+    "function fire(){try{if(window.gtag){gtag('event','conversion',{send_to:'" + sendTo + "'});}" +
+    "if(window.dataLayer){window.dataLayer.push({event:'generate_lead',form_source:'mirror_elementor'});}}catch(e){}}" +
+    "function bind(){if(!window.jQuery)return false;" +
+    "window.jQuery(document).on('submit_success','form.elementor-form',fire);return true;}" +
+    "if(!bind()){var n=0,t=setInterval(function(){if(bind()||++n>40){clearInterval(t);}},250);}" +
+    "})();</script>"
+  );
+}
+const ADS_LEAD_CONVERSION_SNIPPET = buildAdsLeadConversionSnippet();
+
 // Legacy Tawk.to chat is baked into the wget mirror HTML. The migration
 // dropped Tawk entirely in favour of Odoo Live Chat, so strip every
 // trace of it from mirror responses.
@@ -1134,6 +1162,14 @@ function rewriteMirrorHtml(html, pathname = "") {
     out = out.includes("</body>")
       ? out.replace("</body>", RECAPTCHA_MIRROR_SNIPPET + "</body>")
       : out + RECAPTCHA_MIRROR_SNIPPET;
+  }
+  // 6b. Fire the Google Ads lead conversion when a mirror Elementor form
+  //     submits successfully (enquiry + careers forms). Closes the gap
+  //     where mirror-page conversions went uncounted by Google Ads.
+  if (ADS_LEAD_CONVERSION_SNIPPET && out.includes("elementor-form")) {
+    out = out.includes("</body>")
+      ? out.replace("</body>", ADS_LEAD_CONVERSION_SNIPPET + "</body>")
+      : out + ADS_LEAD_CONVERSION_SNIPPET;
   }
   // 7. Repair the Elementor posts-grid thumbnails (careers + insights
   //    listings). On live WordPress, Elementor's frontend JS added
